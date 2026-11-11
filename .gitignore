@@ -21,3 +21,6 @@ Thumbs.db
 *.db-wal
 .env
 web/tsconfig.tsbuildinfo
+
+# Local Netlify folder
+.netlify
