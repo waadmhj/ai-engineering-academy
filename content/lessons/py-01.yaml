@@ -1,0 +1,246 @@
+overview:
+  what: How Python really stores data — names bound to objects — and the built-in types you will use every day.
+  why: Most "mysterious" Python bugs (shared mutable defaults, lists that change behind your back, unhashable dict keys) come from misunderstanding the object model. AI code is full of nested lists, dicts and arrays where this matters.
+  where: Every data pipeline, config loader, prompt template and API payload you will write. Later, NumPy views vs copies and PyTorch in-place operations rely on exactly the same idea.
+  prerequisites: You can run a Python file and use the REPL. Nothing else.
+
+sections:
+  - kind: simple
+    title: Simple explanation
+    body: |
+      Think of Python **objects** as boxes that hold data, and **variables** as sticky-note labels you put on boxes.
+
+      `x = [1, 2, 3]` creates a list box and sticks the label `x` on it. `y = x` does **not** copy the box — it
+      sticks a second label, `y`, on the *same* box. Change the box through `y` and you will see the change through `x`.
+
+      Some boxes can be changed after they are made (**mutable**: lists, dicts, sets). Others cannot (**immutable**:
+      ints, floats, strings, tuples, frozensets). When you "change" an immutable value, Python actually builds a new box and
+      moves the label.
+
+  - kind: technical
+    title: Technical explanation
+    body: |
+      Every Python value is an **object** with three properties:
+
+      | Property | Meaning | How to inspect |
+      |---|---|---|
+      | **identity** | where the object lives; never changes | `id(obj)`, `a is b` |
+      | **type** | what operations it supports; never changes | `type(obj)` |
+      | **value** | its contents; may change only if the type is mutable | `==`, printing |
+
+      A **name** (variable) is an entry in a namespace dictionary that maps a string to an object reference.
+      Assignment `name = expr` evaluates `expr` and **binds** the name to the resulting object. It never copies.
+
+      **Core built-in types**
+
+      | Type | Mutable | Typical use in AI engineering |
+      |---|---|---|
+      | `int` (arbitrary precision), `float` (IEEE-754 double), `bool` | no | counts, scores, flags |
+      | `str` (Unicode code points), `bytes` | no | prompts, tokens, raw file/network data |
+      | `tuple` | no | fixed records, dict keys, shapes like `(batch, seq, dim)` |
+      | `list` | yes | ordered collections, batches |
+      | `dict` | yes | JSON payloads, configs, lookups (ordered by insertion since 3.7) |
+      | `set` / `frozenset` | yes / no | de-duplication, membership tests |
+      | `None` | no | "no value" sentinel |
+
+      **Hashability.** `dict` keys and `set` members must be *hashable*: their hash must never change during their lifetime.
+      That is why immutable types are hashable and lists/dicts are not. A tuple is hashable only if everything inside it is.
+
+      **Equality vs identity.** `==` compares values (calls `__eq__`); `is` compares identity. Use `is` only for singletons
+      such as `None`: `if x is None:`.
+
+  - kind: diagram
+    title: Names, objects and references
+    svg: |
+      <svg viewBox="0 0 560 210" role="img" aria-label="Two names x and y pointing to the same list object; z pointing to a separate copy" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui" font-size="14">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <text x="20" y="24" fill="currentColor" opacity=".6">Namespace</text>
+        <text x="330" y="24" fill="currentColor" opacity=".6">Heap (objects)</text>
+        <rect x="20" y="40" width="70" height="34" rx="6" fill="none" stroke="currentColor"/><text x="48" y="62" fill="currentColor">x</text>
+        <rect x="20" y="90" width="70" height="34" rx="6" fill="none" stroke="currentColor"/><text x="48" y="112" fill="currentColor">y</text>
+        <rect x="20" y="150" width="70" height="34" rx="6" fill="none" stroke="currentColor"/><text x="48" y="172" fill="currentColor">z</text>
+        <rect x="330" y="55" width="200" height="50" rx="8" fill="none" stroke="var(--accent, #6366f1)" stroke-width="2"/>
+        <text x="345" y="76" fill="currentColor">list  id=0x7f…a0</text><text x="345" y="95" fill="currentColor" opacity=".7">[1, 2, 3, 4]</text>
+        <rect x="330" y="140" width="200" height="50" rx="8" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+        <text x="345" y="161" fill="currentColor">list  id=0x7f…c8</text><text x="345" y="180" fill="currentColor" opacity=".7">[1, 2, 3]</text>
+        <line x1="90" y1="57" x2="328" y2="72" stroke="currentColor" marker-end="url(#ah)"/>
+        <line x1="90" y1="107" x2="328" y2="88" stroke="currentColor" marker-end="url(#ah)"/>
+        <line x1="90" y1="167" x2="328" y2="165" stroke="currentColor" marker-end="url(#ah)"/>
+      </svg>
+    caption: "`x = [1, 2, 3]; z = x.copy(); y = x; y.append(4)` — x and y share one object; z is an independent copy."
+
+  - kind: code
+    title: Code
+    body: |
+      ```python
+      # Aliasing: two names, one object
+      x = [1, 2, 3]
+      y = x
+      y.append(4)
+      print(x)          # [1, 2, 3, 4]
+      print(x is y)     # True
+
+      # Copies
+      z = x.copy()      # shallow copy: new outer list, same inner objects
+      print(z is x)     # False
+
+      import copy
+      grid = [[0, 0], [0, 0]]
+      shallow = grid.copy()
+      deep = copy.deepcopy(grid)
+      grid[0][0] = 9
+      print(shallow[0][0], deep[0][0])   # 9 0
+
+      # Immutable "changes" rebind the name
+      s = "embed"
+      t = s
+      s += "ding"       # builds a NEW string, rebinds s
+      print(t)          # 'embed'
+
+      # The classic bug: mutable default argument (evaluated ONCE, at def time)
+      def add_tag(tag, tags=[]):        # ❌
+          tags.append(tag)
+          return tags
+
+      add_tag("a"); print(add_tag("b"))  # ['a', 'b']  — surprise!
+
+      def add_tag_fixed(tag, tags=None):  # ✅
+          tags = [] if tags is None else tags
+          tags.append(tag)
+          return tags
+
+      # Hashability
+      cache = {("gpt", 0.2): "result"}   # tuple key OK
+      # cache[["gpt", 0.2]] = "x"        # TypeError: unhashable type: 'list'
+
+      # Floats are binary approximations
+      print(0.1 + 0.2 == 0.3)                 # False
+      import math; print(math.isclose(0.1 + 0.2, 0.3))  # True
+      ```
+
+  - kind: real_world
+    title: Real-world engineering example
+    body: |
+      A team built a batch-embedding job that grouped documents per tenant:
+
+      ```python
+      batches = dict.fromkeys(tenant_ids, [])   # every key shares ONE list
+      for doc in docs:
+          batches[doc.tenant].append(doc)
+      ```
+
+      Every tenant ended up with *all* documents — a cross-tenant data leak caused purely by aliasing.
+      The fix is to create one list per key: `batches = {t: [] for t in tenant_ids}` or `collections.defaultdict(list)`.
+
+      The same pattern appears when building chat histories (`messages = [system_msg] * n`), nested configs merged in place,
+      and PyTorch tensors modified in place while another variable still refers to them.
+
+  - kind: mistakes
+    title: Common mistakes
+    body: |
+      - **Mutable default arguments** (`def f(x=[])`). Use `None` and create inside.
+      - **`[[0] * 3] * 3`** builds three references to the *same* inner list. Use `[[0] * 3 for _ in range(3)]`.
+      - **`is` for value comparison** (`if name is "admin"`). Works by accident for some small strings/ints; use `==`.
+      - **Comparing floats with `==`.** Use `math.isclose` or a tolerance.
+      - **Assuming `.copy()` is deep.** It copies only the outer container.
+      - **Confusing `str` and `bytes`.** Decode bytes from files/network explicitly: `data.decode("utf-8")`.
+
+  - kind: when
+    title: When to use what
+    body: |
+      - Use a **tuple** for fixed-size records and anything that must be a dict key; a **list** when the collection grows or changes.
+      - Use a **set** for membership tests on large collections (`O(1)` average vs `O(n)` for lists).
+      - Use **`dataclasses`** or **Pydantic models** instead of deeply nested dicts once a structure has a name and a schema.
+      - Use **`copy.deepcopy`** sparingly — it is slow and often hides a design problem. Prefer building new objects with comprehensions.
+      - **Don't** reach for `numpy` arrays for small, heterogeneous data — plain lists/dicts are clearer.
+
+exercise:
+  title: Fix the leaky batcher
+  prompt: |
+    The function below should group documents by tenant, but tenants see each other's documents.
+    Fix it **without** changing its signature, and make the default argument safe.
+
+    ```python
+    def group_by_tenant(docs, tenants, out={}):
+        out.update(dict.fromkeys(tenants, []))
+        for doc in docs:
+            out[doc["tenant"]].append(doc["id"])
+        return out
+    ```
+  starter: |
+    def group_by_tenant(docs, tenants, out=None):
+        ...
+  expected: |
+    group_by_tenant([{"tenant": "a", "id": 1}, {"tenant": "b", "id": 2}], ["a", "b"])
+    # -> {"a": [1], "b": [2]}
+    # and calling it twice returns independent dicts
+  hints:
+    - "`dict.fromkeys(keys, [])` uses the SAME list object as every value."
+    - The default `{}` is created once, when the function is defined, and reused on every call.
+  solution: |
+    def group_by_tenant(docs, tenants, out=None):
+        out = {} if out is None else out
+        for t in tenants:
+            out.setdefault(t, [])          # a NEW list per tenant
+        for doc in docs:
+            out[doc["tenant"]].append(doc["id"])
+        return out
+  explanation: |
+    Two separate aliasing bugs combined: (1) the mutable default `out={}` persisted across calls, and
+    (2) `dict.fromkeys(tenants, [])` bound every key to one shared list. Creating the dict per call and a fresh list per
+    key gives each tenant its own object. `setdefault` also preserves any lists the caller passed in.
+  advanced: |
+    Write a pytest test that would have caught both bugs (call the function twice; assert `out["a"] is not out["b"]`).
+    Then rewrite the function with `collections.defaultdict(list)` and discuss what changes for unknown tenants.
+
+quiz:
+  - id: q1
+    kind: mcq
+    prompt: "After `a = [1, 2]; b = a; b += [3]`, what is `a`?"
+    options: ["`[1, 2]`", "`[1, 2, 3]`", "`TypeError`", "`[[1, 2], 3]`"]
+    answer: 1
+    explanation: "`+=` on a list mutates it in place (`list.__iadd__`), and `a` and `b` name the same object."
+  - id: q2
+    kind: mcq
+    prompt: Which of these can be used as a dictionary key?
+    options: ["`[1, 2]`", "`{1, 2}`", "`(1, [2])`", "`(1, 'two', 3.0)`"]
+    answer: 3
+    explanation: Keys must be hashable. A tuple is hashable only if every element is; `(1, [2])` contains a list.
+  - id: q3
+    kind: multi
+    prompt: Select ALL immutable types.
+    options: ["str", "list", "tuple", "frozenset", "dict", "bytes"]
+    answer: [0, 2, 3, 5]
+    explanation: str, tuple, frozenset and bytes cannot change after creation; list and dict can.
+  - id: q4
+    kind: technical
+    prompt: Explain the difference between `==` and `is`, and give the one common case where `is` is the right choice.
+    keywords: [["value", "equal"], ["identity", "same object"], ["none"]]
+    model_answer: "`==` compares values via `__eq__`; `is` checks whether both names refer to the very same object (identity). Use `is` for singletons, most commonly `x is None`."
+  - id: q5
+    kind: practical
+    prompt: "`matrix = [[0] * 3] * 3; matrix[0][0] = 1` — what does `matrix` look like and how do you fix the construction?"
+    keywords: [["[1, 0, 0]", "every row", "all rows", "three rows"], ["comprehension", "for _ in range"]]
+    model_answer: "`[[1, 0, 0], [1, 0, 0], [1, 0, 0]]` — the outer `* 3` repeats a reference to one inner list. Build independent rows with `[[0] * 3 for _ in range(3)]`."
+  - id: q6
+    kind: scenario
+    prompt: "A function caches LLM responses in a dict keyed by the request. Requests are dicts like `{\"model\": ..., \"messages\": [...]}` and the code crashes with `TypeError: unhashable type`. Propose a robust key."
+    keywords: [["json", "serialize", "dumps"], ["sort_keys", "canonical", "deterministic"], ["hash", "sha"]]
+    model_answer: "Dicts and lists are unhashable. Build a canonical string with `json.dumps(request, sort_keys=True, separators=(',', ':'))` and optionally hash it (e.g. SHA-256) to get a fixed-size key. Sorting keys makes logically equal requests map to the same key."
+  - id: q7
+    kind: short
+    prompt: Why does `0.1 + 0.2 == 0.3` evaluate to False?
+    keywords: [["binary", "base 2", "ieee"], ["approximat", "represent exactly", "rounding"]]
+    model_answer: Floats are IEEE-754 binary fractions; 0.1, 0.2 and 0.3 cannot be represented exactly, so the rounded sum differs slightly from the rounded 0.3. Compare with a tolerance (`math.isclose`).
+
+flashcards:
+  - front: What does assignment `y = x` do in Python?
+    back: Binds the name `y` to the same object `x` refers to. It never copies.
+  - front: Three properties every Python object has
+    back: Identity (`id`, `is`), type (`type`), value (may change only for mutable types).
+  - front: Why are lists not hashable?
+    back: Their value can change, which would change their hash and break dict/set lookups.
+  - front: Safe pattern for mutable default arguments
+    back: "`def f(x=None): x = [] if x is None else x`"
+  - front: Shallow vs deep copy
+    back: Shallow copies the outer container only (inner objects shared); `copy.deepcopy` recursively copies everything.

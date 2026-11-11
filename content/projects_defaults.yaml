@@ -1,0 +1,35 @@
+# Shared by every capstone/portfolio project (merged by the loader).
+documentation:
+  - README with problem, demo GIF/video, architecture diagram and quick start
+  - Design document (requirements, architecture, data model, alternatives considered)
+  - Architecture Decision Records (ADRs) for each major decision
+  - Evaluation report with methodology, datasets, results and confidence intervals
+  - Runbook (deploy, rollback, common incidents) and cost report
+deliverables:
+  - Public GitHub repository with clean history, CI badge and licence
+  - Tests and eval suite runnable with one command
+  - Dockerfile(s) + Compose; IaC where deployed
+  - Live demo or recorded walkthrough (≤ 5 minutes)
+  - Technical write-up (blog post) summarising lessons learned
+rubric:
+  - criterion: Problem framing & requirements
+    weight: 10
+    levels: { exemplary: "Clear users, measurable success criteria, NFRs quantified", proficient: "Requirements listed, some metrics", developing: "Vague goals" }
+  - criterion: Architecture & engineering decisions
+    weight: 20
+    levels: { exemplary: "Alternatives compared with evidence; ADRs for each decision", proficient: "Reasonable design, some justification", developing: "Followed a tutorial; no trade-offs discussed" }
+  - criterion: Implementation quality
+    weight: 15
+    levels: { exemplary: "Typed, modular, tested, readable; error handling throughout", proficient: "Works, mostly clean", developing: "Fragile, untested" }
+  - criterion: Evaluation rigor
+    weight: 20
+    levels: { exemplary: "Golden set, multiple metrics, CIs, ablations, regression gate", proficient: "Eval set and metrics", developing: "Manual spot checks only" }
+  - criterion: Security & responsibility
+    weight: 10
+    levels: { exemplary: "Threat model, mitigations tested, data handling documented", proficient: "Main risks addressed", developing: "Not considered" }
+  - criterion: Production readiness
+    weight: 15
+    levels: { exemplary: "Deployed with CI/CD, monitoring, SLOs, cost tracking", proficient: "Containerised and deployable", developing: "Runs only locally" }
+  - criterion: Documentation & communication
+    weight: 10
+    levels: { exemplary: "A stranger can run, understand and evaluate it in 15 minutes", proficient: "Good README", developing: "Minimal docs" }

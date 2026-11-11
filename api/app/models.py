@@ -1,0 +1,308 @@
+"""SQLAlchemy ORM models.
+
+Content tables are (re)built from content/ by the seeder; learner-state tables are never touched by seeding.
+"""
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .db import Base
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+# ───────────────────────────── Content ─────────────────────────────
+class Stage(Base):
+    __tablename__ = "stages"
+    id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    order: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    summary: Mapped[str] = mapped_column(Text, default="")
+    modules: Mapped[list[Module]] = relationship(back_populates="stage", order_by="Module.order")
+
+
+class Module(Base):
+    __tablename__ = "modules"
+    id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    stage_id: Mapped[str] = mapped_column(ForeignKey("stages.id"))
+    order: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    summary: Mapped[str] = mapped_column(Text, default="")
+    prerequisites: Mapped[list] = mapped_column(JSON, default=list)
+    project_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    stage: Mapped[Stage] = relationship(back_populates="modules")
+    lessons: Mapped[list[Lesson]] = relationship(back_populates="module", order_by="Lesson.order")
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    module_id: Mapped[str] = mapped_column(ForeignKey("modules.id"))
+    order: Mapped[int] = mapped_column(Integer)
+    global_order: Mapped[int] = mapped_column(Integer, index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    level: Mapped[str] = mapped_column(String(20))
+    minutes: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(16))  # authored | outline
+    covers: Mapped[list] = mapped_column(JSON, default=list)
+    objectives: Mapped[list] = mapped_column(JSON, default=list)
+    overview: Mapped[dict] = mapped_column(JSON, default=dict)
+    sections: Mapped[list] = mapped_column(JSON, default=list)
+    workshop: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    module: Mapped[Module] = relationship(back_populates="lessons")
+    exercise: Mapped[Exercise | None] = relationship(back_populates="lesson", uselist=False)
+    questions: Mapped[list[Question]] = relationship(back_populates="lesson", order_by="Question.order")
+    flashcards: Mapped[list[Flashcard]] = relationship(back_populates="lesson")
+    resource_links: Mapped[list[LessonResource]] = relationship(back_populates="lesson", order_by="LessonResource.order")
+
+
+class Resource(Base):
+    __tablename__ = "resources"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(400))
+    provider: Mapped[str] = mapped_column(String(200))
+    type: Mapped[str] = mapped_column(String(20), index=True)
+    level: Mapped[str] = mapped_column(String(20))
+    duration: Mapped[str] = mapped_column(String(40))
+    language: Mapped[str] = mapped_column(String(20), default="en")
+    cost: Mapped[str] = mapped_column(String(20))
+    url: Mapped[str] = mapped_column(String(600))
+    why: Mapped[str] = mapped_column(Text)
+    authors: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    embed: Mapped[dict] = mapped_column(JSON, default=dict)
+    chapters: Mapped[list] = mapped_column(JSON, default=list)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    impact: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class LessonResource(Base):
+    __tablename__ = "lesson_resources"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), index=True)
+    resource_id: Mapped[str] = mapped_column(ForeignKey("resources.id"), index=True)
+    role: Mapped[str] = mapped_column(String(16))  # required | supplementary
+    order: Mapped[int] = mapped_column(Integer)
+    lesson: Mapped[Lesson] = relationship(back_populates="resource_links")
+    resource: Mapped[Resource] = relationship()
+
+
+class Exercise(Base):
+    __tablename__ = "exercises"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), unique=True)
+    data: Mapped[dict] = mapped_column(JSON)  # title, prompt, starter, expected, hints, solution, explanation, advanced
+    lesson: Mapped[Lesson] = relationship(back_populates="exercise")
+
+
+class Question(Base):
+    __tablename__ = "questions"
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    lesson_id: Mapped[str | None] = mapped_column(ForeignKey("lessons.id"), nullable=True, index=True)
+    track: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)  # interview track
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    kind: Mapped[str] = mapped_column(String(16))
+    prompt: Mapped[str] = mapped_column(Text)
+    options: Mapped[list] = mapped_column(JSON, default=list)
+    answer: Mapped[object] = mapped_column(JSON, nullable=True)
+    keywords: Mapped[list] = mapped_column(JSON, default=list)
+    model_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lesson: Mapped[Lesson | None] = relationship(back_populates="questions")
+
+
+class Flashcard(Base):
+    __tablename__ = "flashcards"
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"), index=True)
+    front: Mapped[str] = mapped_column(Text)
+    back: Mapped[str] = mapped_column(Text)
+    lesson: Mapped[Lesson] = relationship(back_populates="flashcards")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    level: Mapped[str] = mapped_column(String(16), index=True)  # mini | module | capstone | portfolio
+    module_id: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    order: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(300))
+    summary: Mapped[str] = mapped_column(Text)
+    hours: Mapped[int] = mapped_column(Integer)
+    covers: Mapped[list] = mapped_column(JSON, default=list)
+    prerequisites: Mapped[list] = mapped_column(JSON, default=list)
+    spec: Mapped[dict] = mapped_column(JSON, default=dict)
+    milestones: Mapped[list[ProjectMilestone]] = relationship(back_populates="project", order_by="ProjectMilestone.order")
+    rubric: Mapped[list[RubricCriterion]] = relationship(back_populates="project", order_by="RubricCriterion.order")
+
+
+class ProjectMilestone(Base):
+    __tablename__ = "project_milestones"
+    id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    order: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(300))
+    deliverables: Mapped[list] = mapped_column(JSON, default=list)
+    project: Mapped[Project] = relationship(back_populates="milestones")
+
+
+class RubricCriterion(Base):
+    __tablename__ = "rubric_criteria"
+    id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
+    order: Mapped[int] = mapped_column(Integer)
+    criterion: Mapped[str] = mapped_column(String(200))
+    weight: Mapped[int] = mapped_column(Integer)
+    levels: Mapped[dict] = mapped_column(JSON)
+    project: Mapped[Project] = relationship(back_populates="rubric")
+
+
+class ForgePart(Base):
+    __tablename__ = "forge_parts"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    order: Mapped[int] = mapped_column(Integer)
+    lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"))
+    title: Mapped[str] = mapped_column(String(200))
+    file: Mapped[str] = mapped_column(String(64))
+    test: Mapped[str] = mapped_column(String(64))
+    functions: Mapped[list] = mapped_column(JSON)
+    task: Mapped[str] = mapped_column(Text)
+    hints: Mapped[list] = mapped_column(JSON)
+    capability: Mapped[str] = mapped_column(Text)
+
+
+# ───────────────────────────── Learner state ─────────────────────────────
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(120))
+    password_hash: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LessonProgress(Base):
+    __tablename__ = "lesson_progress"
+    __table_args__ = (UniqueConstraint("user_id", "lesson_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    lesson_id: Mapped[str] = mapped_column(String(32), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="not_started")
+    mastery: Mapped[float] = mapped_column(Float, default=0.0)
+    quiz_best: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quiz_last: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exercise_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    objectives_checked: Mapped[list] = mapped_column(JSON, default=list)
+    seconds_spent: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class QuestionAttempt(Base):
+    __tablename__ = "question_attempts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    question_id: Mapped[str] = mapped_column(String(80), index=True)
+    lesson_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    mode: Mapped[str] = mapped_column(String(16))  # lesson | revision | interview
+    response: Mapped[object] = mapped_column(JSON, nullable=True)
+    score: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class ExerciseSubmission(Base):
+    __tablename__ = "exercise_submissions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    lesson_id: Mapped[str] = mapped_column(String(32), index=True)
+    code: Mapped[str] = mapped_column(Text)
+    self_check: Mapped[str] = mapped_column(String(16))  # solved | partial | stuck
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CardState(Base):
+    __tablename__ = "card_states"
+    __table_args__ = (UniqueConstraint("user_id", "flashcard_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    flashcard_id: Mapped[str] = mapped_column(String(80), index=True)
+    lesson_id: Mapped[str] = mapped_column(String(32), index=True)
+    ease: Mapped[float] = mapped_column(Float, default=2.5)
+    interval_days: Mapped[float] = mapped_column(Float, default=0.0)
+    repetitions: Mapped[int] = mapped_column(Integer, default=0)
+    lapses: Mapped[int] = mapped_column(Integer, default=0)
+    reviews: Mapped[int] = mapped_column(Integer, default=0)
+    correct: Mapped[int] = mapped_column(Integer, default=0)
+    last_grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectProgress(Base):
+    __tablename__ = "project_progress"
+    __table_args__ = (UniqueConstraint("user_id", "project_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    project_id: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="not_started")  # not_started | in_progress | submitted | completed
+    repo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    demo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    decisions: Mapped[list] = mapped_column(JSON, default=list)  # ADR-style [{title, decision, rationale}]
+    rubric_scores: Mapped[dict] = mapped_column(JSON, default=dict)  # criterion_id -> exemplary|proficient|developing
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class MilestoneProgress(Base):
+    __tablename__ = "milestone_progress"
+    __table_args__ = (UniqueConstraint("user_id", "milestone_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    milestone_id: Mapped[str] = mapped_column(String(96), index=True)
+    project_id: Mapped[str] = mapped_column(String(64), index=True)
+    done: Mapped[bool] = mapped_column(Boolean, default=False)
+    evidence_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class StudySession(Base):
+    __tablename__ = "study_sessions"
+    __table_args__ = (UniqueConstraint("user_id", "day"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    day: Mapped[date] = mapped_column(Date, index=True)
+    seconds: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Activity(Base):
+    __tablename__ = "activity"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(32))
+    ref_id: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    detail: Mapped[str] = mapped_column(String(500), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class ForgeProgress(Base):
+    __tablename__ = "forge_progress"
+    __table_args__ = (UniqueConstraint("user_id", "part_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    part_id: Mapped[str] = mapped_column(String(32))
+    passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    passed_tests: Mapped[int] = mapped_column(Integer, default=0)
+    total_tests: Mapped[int] = mapped_column(Integer, default=0)
+    last_output: Mapped[str] = mapped_column(Text, default="")
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

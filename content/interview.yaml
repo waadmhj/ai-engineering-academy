@@ -1,0 +1,225 @@
+# Technical Interview Mode question bank. Tracks: python, sql, ml, llm, rag, agents, system-design
+# ─────────── Python ───────────
+- id: py-gil
+  track: python
+  kind: technical
+  prompt: What is the GIL, and how does it affect threads vs processes vs asyncio for (a) CPU-bound and (b) I/O-bound work?
+  keywords: [["global interpreter lock", "gil"], ["one thread", "single thread", "bytecode"], ["i/o", "io-bound", "network"], ["multiprocessing", "process"]]
+  model_answer: "The Global Interpreter Lock lets only one thread execute Python bytecode at a time in CPython. For CPU-bound work threads give no speed-up — use multiprocessing (or native code/NumPy that releases the GIL). For I/O-bound work the GIL is released while waiting, so threads or asyncio work well; asyncio scales to thousands of concurrent connections with less overhead."
+- id: py-generator
+  track: python
+  kind: mcq
+  prompt: "What does `sum(x * x for x in range(10**8))` avoid compared with `sum([x * x for x in range(10**8)])`?"
+  options: ["Running in O(n) time", "Materialising a 100-million-element list in memory", "Integer overflow", "The GIL"]
+  answer: 1
+  explanation: The generator expression yields values lazily; the list comprehension builds the whole list first.
+- id: py-decorator
+  track: python
+  kind: practical
+  prompt: Write (in words or code) a `@retry(times=3)` decorator for flaky API calls. What must you be careful about?
+  keywords: [["wraps", "functools"], ["except", "exception"], ["backoff", "sleep", "jitter"], ["idempot", "specific exception", "retryable"]]
+  model_answer: "A decorator factory returning a decorator that wraps the function (with functools.wraps), loops up to `times`, catches only retryable exceptions, sleeps with exponential backoff + jitter, and re-raises after the last attempt. Be careful to retry only idempotent operations and specific transient errors, not every Exception."
+- id: py-mutable-default
+  track: python
+  kind: short
+  prompt: Why is `def f(items=[])` a bug and what is the fix?
+  keywords: [["once", "definition", "def time"], ["shared", "persist", "same list"], ["none"]]
+  model_answer: Default values are evaluated once at function definition, so the same list is shared across calls and accumulates state. Use `items=None` and create a new list inside.
+- id: py-async-gather
+  track: python
+  kind: scenario
+  prompt: You must call an LLM API for 5,000 prompts with a provider limit of 20 concurrent requests. Sketch an asyncio design.
+  keywords: [["semaphore", "bounded", "limit"], ["gather", "task", "taskgroup"], ["retry", "backoff", "429"], ["timeout"]]
+  model_answer: "Create an async client; wrap each call in an `asyncio.Semaphore(20)`; schedule all with `asyncio.gather`/TaskGroup (or a worker-queue of 20 consumers); handle 429/5xx with exponential backoff and jitter; set per-request timeouts; collect results and failures separately; persist progress so the batch can resume."
+# ─────────── SQL ───────────
+- id: sql-window
+  track: sql
+  kind: practical
+  prompt: "Table `answers(user_id, lesson_id, score, created_at)`. Write SQL returning each user's most recent score per lesson."
+  keywords: [["row_number", "rank", "distinct on", "max("], ["partition by"], ["order by created_at desc", "created_at desc"]]
+  model_answer: "SELECT user_id, lesson_id, score FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY user_id, lesson_id ORDER BY created_at DESC) AS rn FROM answers) t WHERE rn = 1;  (In PostgreSQL also: SELECT DISTINCT ON (user_id, lesson_id) ... ORDER BY user_id, lesson_id, created_at DESC.)"
+- id: sql-join
+  track: sql
+  kind: mcq
+  prompt: Which join returns all lessons, including those with no attempts (NULLs for attempt columns)?
+  options: ["INNER JOIN attempts", "lessons LEFT JOIN attempts", "lessons RIGHT JOIN attempts", "CROSS JOIN attempts"]
+  answer: 1
+  explanation: LEFT JOIN keeps every row of the left table.
+- id: sql-index
+  track: sql
+  kind: technical
+  prompt: When does a B-tree index help, when doesn't it, and what does it cost?
+  keywords: [["selective", "where", "filter", "lookup"], ["order", "range", "sort"], ["write", "insert", "update"], ["storage", "space"]]
+  model_answer: "It speeds up selective lookups, range scans, joins and ORDER BY on indexed columns. It does not help low-selectivity filters, functions on the column (without an expression index) or leading-wildcard LIKE. Costs: slower writes (index maintenance) and extra storage."
+- id: sql-having
+  track: sql
+  kind: short
+  prompt: What is the difference between WHERE and HAVING?
+  keywords: [["before", "rows"], ["after", "group", "aggregate"]]
+  model_answer: WHERE filters rows before grouping; HAVING filters groups after aggregation (can reference aggregates).
+- id: sql-transaction
+  track: sql
+  kind: scenario
+  prompt: Two workers ingest the same document concurrently and you get duplicate chunks. How do you make ingestion safe?
+  keywords: [["unique", "constraint"], ["upsert", "on conflict"], ["transaction", "lock", "idempot"]]
+  model_answer: "Add a unique constraint on a deterministic key (document id + chunk index or content hash), write with INSERT ... ON CONFLICT DO UPDATE/NOTHING inside a transaction, and make the job idempotent (or take an advisory lock per document)."
+# ─────────── ML / DL ───────────
+- id: ml-bias-variance
+  track: ml
+  kind: technical
+  prompt: Explain the bias–variance trade-off and how you'd diagnose which one hurts your model.
+  keywords: [["bias", "underfit"], ["variance", "overfit"], ["training", "validation", "learning curve"]]
+  model_answer: "Bias is error from overly simple assumptions (underfitting: high train and validation error); variance is sensitivity to the training sample (overfitting: low train, high validation error). Learning curves of train vs validation error diagnose which dominates; fix bias with more capacity/features, variance with more data, regularisation or simpler models."
+- id: ml-leakage
+  track: ml
+  kind: scenario
+  prompt: Your model has 99% validation accuracy but fails in production. Name three possible causes of leakage and how to check.
+  keywords: [["leak"], ["split", "duplicate", "time", "future"], ["preprocess", "scal", "fit on"], ["target"]]
+  model_answer: "Duplicates/near-duplicates across train and validation; random splits on time-series (future information); preprocessing (scaling, imputation, feature selection) fitted on the full dataset; features derived from the target or only available after the outcome. Check by deduplicating, using time/group-based splits, fitting pipelines on train only, and auditing feature availability at prediction time."
+- id: ml-backprop
+  track: ml
+  kind: short
+  prompt: In one or two sentences, what does backpropagation compute and which rule makes it possible?
+  keywords: [["gradient", "derivative"], ["chain rule"], ["loss", "parameter", "weight"]]
+  model_answer: It computes the gradient of the loss with respect to every parameter by applying the chain rule backwards through the computational graph, reusing intermediate results.
+- id: ml-metric
+  track: ml
+  kind: mcq
+  prompt: A fraud classifier has 0.5% positives. Which metric is LEAST informative alone?
+  options: ["Precision", "Recall", "Accuracy", "PR-AUC"]
+  answer: 2
+  explanation: Predicting "not fraud" always gives 99.5% accuracy.
+- id: dl-adamw
+  track: ml
+  kind: technical
+  prompt: Why do transformers typically use AdamW with warmup?
+  keywords: [["adaptive", "per-parameter", "moment"], ["weight decay", "decoupled"], ["warmup", "early", "unstable", "variance"]]
+  model_answer: "Adam's per-parameter adaptive learning rates handle very different gradient scales across layers; AdamW decouples weight decay from the adaptive update so regularisation works as intended; warmup avoids large, unstable updates early when the second-moment estimates are unreliable."
+# ─────────── LLM ───────────
+- id: llm-kv
+  track: llm
+  kind: technical
+  prompt: What is the KV cache, why does it exist, and what limits it?
+  keywords: [["key", "value"], ["past", "previous", "reuse"], ["memory", "gpu"], ["length", "batch", "tokens"]]
+  model_answer: "During autoregressive decoding, keys and values of previous tokens don't change, so they are cached instead of recomputed, making each step O(n) instead of re-processing the prefix. Its memory grows with layers × heads × head_dim × sequence length × batch, which limits context length and concurrency (addressed by GQA/MQA, paging, quantised KV)."
+- id: llm-tokenization
+  track: llm
+  kind: scenario
+  prompt: Your product costs 2× more for Arabic users than English users for the same content. Explain why and what you can do.
+  keywords: [["token", "tokeniz"], ["bpe", "vocabulary", "trained"], ["model", "tokenizer", "choose"]]
+  model_answer: "BPE tokenizers trained mostly on English split other scripts into more tokens per word, so the same content costs more tokens (and context). Options: choose models whose tokenizers are efficient for the language, measure tokens-per-character per model, compress prompts, cache, or route those users to a more efficient model."
+- id: llm-temperature
+  track: llm
+  kind: mcq
+  prompt: Setting temperature to 0 (greedy decoding) guarantees...
+  options: ["Factually correct answers", "Identical outputs on every hosted API call", "The most likely next token at each step (under the model)", "No hallucinations"]
+  answer: 2
+  explanation: Greedy decoding picks the argmax token; hosted APIs may still vary slightly due to batching/numerics, and likely ≠ true.
+- id: llm-rlhf-dpo
+  track: llm
+  kind: short
+  prompt: How does DPO differ from PPO-based RLHF?
+  keywords: [["reward model"], ["preference", "chosen", "rejected"], ["classification", "loss", "directly", "no rl"]]
+  model_answer: DPO optimises the policy directly on preference pairs with a simple classification-style loss, without training a separate reward model or running RL (PPO), making it simpler and more stable.
+- id: llm-encoder-decoder
+  track: llm
+  kind: technical
+  prompt: When would you choose an encoder-only model over a decoder-only LLM?
+  keywords: [["embedding", "classification", "retrieval", "rerank"], ["bidirectional"], ["cheap", "fast", "small", "latency"]]
+  model_answer: "For understanding tasks — embeddings, classification, NER, reranking — where bidirectional context helps and generation isn't needed; encoder models are much smaller, faster and cheaper to run at scale."
+# ─────────── RAG ───────────
+- id: rag-chunking
+  track: rag
+  kind: scenario
+  prompt: How would you choose a chunking strategy for a corpus of technical manuals with tables and section headings?
+  keywords: [["structure", "heading", "section"], ["table"], ["size", "overlap"], ["eval", "recall", "measure"]]
+  model_answer: "Parse structure first; chunk along headings (structure-aware), keep tables intact (or serialise them with their caption), attach section path/title metadata, choose size/overlap by experiment, and compare strategies on a labelled question set using retrieval recall@k before choosing."
+- id: rag-hybrid
+  track: rag
+  kind: technical
+  prompt: Why does hybrid (BM25 + dense) retrieval often beat either alone, and how are results combined?
+  keywords: [["exact", "keyword", "rare", "identifier"], ["semantic", "paraphrase", "meaning"], ["reciprocal rank fusion", "rrf", "weighted"]]
+  model_answer: "BM25 excels at exact and rare terms (IDs, names, jargon); dense retrieval handles paraphrases and semantics. Their errors are complementary. Results are fused, commonly with reciprocal rank fusion (sum of 1/(k+rank)) or a weighted score combination, then optionally reranked."
+- id: rag-eval
+  track: rag
+  kind: technical
+  prompt: Design an evaluation for a RAG system. What do you measure and how?
+  keywords: [["golden", "labelled", "dataset"], ["recall", "mrr", "retrieval"], ["faithful", "grounded"], ["relevance", "correct"]]
+  model_answer: "Build a golden set of questions with reference answers and relevant passages. Measure retrieval separately (recall@k, MRR/nDCG) and generation (faithfulness/groundedness, answer correctness/relevance, citation precision) with human labels and calibrated LLM judges; track latency and cost; run it in CI to catch regressions."
+- id: rag-rerank
+  track: rag
+  kind: mcq
+  prompt: Why is a cross-encoder reranker applied only to the top-N candidates rather than the whole corpus?
+  options: ["It can't process long text", "It must jointly encode each query–document pair, which is too slow for millions of documents", "It needs labelled data", "It doesn't support filters"]
+  answer: 1
+  explanation: Cross-encoders can't precompute document vectors; cost is per pair.
+- id: rag-acl
+  track: rag
+  kind: scenario
+  prompt: A RAG assistant for a company must never reveal documents an employee can't access. Where and how do you enforce this?
+  keywords: [["retriev", "filter", "index"], ["acl", "permission", "metadata", "group"], ["not the llm", "never", "before"]]
+  model_answer: "At retrieval: store ACL metadata (users/groups) per chunk, sync it from source systems, and apply a mandatory filter for the caller's identity (or separate indexes per tenant) so unauthorised chunks never reach the prompt. Never rely on the LLM to withhold content; test with permission-leakage cases."
+# ─────────── Agents ───────────
+- id: ag-workflow-vs-agent
+  track: agents
+  kind: technical
+  prompt: When would you build a workflow instead of an autonomous agent?
+  keywords: [["predictable", "fixed", "known steps"], ["reliab", "cost", "latency", "debug"], ["open-ended", "flexib", "unknown"]]
+  model_answer: "When the steps are known and predictable: workflows (prompt chains, routing, parallelisation) are cheaper, faster, easier to test and debug. Use agents when the path can't be predetermined and flexibility is worth the extra cost, latency and risk."
+- id: ag-tool-safety
+  track: agents
+  kind: scenario
+  prompt: An agent has a `send_email` tool and reads untrusted web pages. What can go wrong and how do you mitigate it?
+  keywords: [["injection", "indirect"], ["approval", "human", "confirm"], ["least privilege", "allow", "restrict"], ["exfiltrat", "leak"]]
+  model_answer: "Indirect prompt injection in a page can instruct the agent to email private data to an attacker (exfiltration). Mitigate with least privilege (restricted recipients/allow-lists), human approval for sending, separating untrusted content from instructions, output filtering, and monitoring tool calls."
+- id: ag-memory
+  track: agents
+  kind: short
+  prompt: Distinguish short-term and long-term memory in agents.
+  keywords: [["context", "conversation", "working"], ["persist", "store", "database", "vector"], ["retriev"]]
+  model_answer: Short-term memory is the working context of the current task/conversation (in the prompt/state). Long-term memory persists across sessions in external storage (DB/vector store) and is retrieved selectively when relevant.
+- id: ag-eval
+  track: agents
+  kind: technical
+  prompt: How do you evaluate an agent beyond final-answer accuracy?
+  keywords: [["trajectory", "steps", "tool calls"], ["cost", "tokens", "latency"], ["success rate", "task"], ["simulat", "sandbox", "environment"]]
+  model_answer: "Measure task success rate, trajectory quality (correct tools, arguments, unnecessary steps, loops), safety violations, cost and latency per task, robustness to tool failures — using reproducible simulated environments and judged traces."
+- id: ag-loop
+  track: agents
+  kind: mcq
+  prompt: Which is the core loop of a ReAct-style agent?
+  options: ["Retrieve → generate", "Thought → action → observation, repeated", "Plan once → execute all", "Generate → self-critique once"]
+  answer: 1
+  explanation: ReAct interleaves reasoning, tool actions and observations.
+# ─────────── System design ───────────
+- id: sd-chat-scale
+  track: system-design
+  kind: scenario
+  prompt: Design a document Q&A product for 10,000 companies, each with up to 1M documents. Outline the architecture and the main trade-offs.
+  keywords: [["tenant", "isolation"], ["ingestion", "queue", "worker"], ["vector", "index", "hybrid"], ["cache", "cost"], ["eval", "observab", "monitor"]]
+  model_answer: "Multi-tenant ingestion via queues and workers (parse, chunk, embed) with versioned indexes; per-tenant isolation (namespaces or filtered shared index — trade cost vs isolation); hybrid retrieval + reranking; LLM gateway with routing, rate limits and caching; ACL enforcement at retrieval; observability (traces, cost per tenant) and an eval pipeline gating releases; plan re-indexing and backfills."
+- id: sd-latency
+  track: system-design
+  kind: technical
+  prompt: A chat feature has p95 latency of 9 s. List the levers you would investigate, in order.
+  keywords: [["measure", "trace", "breakdown"], ["stream"], ["smaller model", "routing", "cache"], ["parallel", "retriev", "rerank"], ["prompt", "token", "output length"]]
+  model_answer: "First measure a per-stage breakdown with traces. Then: stream tokens (perceived latency), cut input/output tokens, cache (prompt caching, response/semantic cache), parallelise independent calls, route easy requests to smaller/faster models, tune retrieval/reranking depth, and consider serving optimisations if self-hosting."
+- id: sd-cost
+  track: system-design
+  kind: mcq
+  prompt: Which change usually reduces LLM cost the MOST for a high-volume FAQ assistant?
+  options: ["Increasing top-k retrieval", "Response/semantic caching plus routing easy questions to a small model", "Adding chain-of-thought to every prompt", "Using a larger context window"]
+  answer: 1
+  explanation: Repeated questions hit the cache; most remaining traffic can use a cheaper model.
+- id: sd-fallback
+  track: system-design
+  kind: technical
+  prompt: How would you design provider fallbacks for an LLM gateway without causing duplicate side effects?
+  keywords: [["timeout", "circuit breaker"], ["retry", "backoff"], ["idempot", "side effect"], ["health", "routing", "fallback"]]
+  model_answer: "Per-provider timeouts and circuit breakers, retries with backoff for transient errors, health-based routing to a secondary provider, idempotency keys for any operation with side effects (tool calls are executed by your service, not the model), and logging which provider served each request for evaluation."
+- id: sd-observability
+  track: system-design
+  kind: short
+  prompt: What should be in a trace for one RAG request?
+  keywords: [["query", "input"], ["retriev", "chunks", "ids"], ["prompt", "model", "version"], ["latency", "tokens", "cost"]]
+  model_answer: "Request/user/tenant ids, the (redacted) query, rewritten queries, retrieved chunk ids and scores, reranker output, prompt template version, model and parameters, output, citations, latency per stage, token counts and cost, and any feedback."

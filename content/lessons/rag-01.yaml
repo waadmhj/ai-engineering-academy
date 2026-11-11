@@ -1,0 +1,281 @@
+overview:
+  what: The architecture of a Retrieval-Augmented Generation system — its offline indexing path, its online query path, and the decisions at each stage.
+  why: RAG is the most common production pattern for LLM applications. Teams that treat it as "embed, search, stuff into prompt" ship systems that hallucinate, miss answers and cannot be improved systematically.
+  where: Enterprise knowledge assistants, customer support, documentation search, legal/medical research tools, coding assistants, and this platform's own AI tutor.
+  prerequisites: "Embeddings and similarity (emb-01, emb-02), semantic search and ANN (emb-04, emb-05), hybrid search (emb-07), structured prompting (pe-03), LLM APIs (api-01)."
+
+sections:
+  - kind: simple
+    title: Simple explanation
+    body: |
+      An LLM is like a brilliant student who studied a huge library — years ago — and is taking a **closed-book exam**.
+      It may not know your company's documents, last week's changes, or the exact wording of a policy, and when unsure it
+      sometimes makes things up.
+
+      RAG turns it into an **open-book exam**: before answering, a search system finds the few most relevant pages from
+      *your* documents and hands them to the model with the instruction "answer using these pages, and cite them".
+
+      Two halves:
+      - **Indexing (offline):** prepare the library — split documents into passages and make them searchable.
+      - **Answering (online):** for each question — find the best passages, then let the model write a grounded answer.
+
+  - kind: technical
+    title: Technical explanation
+    body: |
+      **Offline indexing pipeline**
+      1. **Ingest** sources (files, wikis, tickets, databases) with metadata: source, owner, timestamps, permissions.
+      2. **Parse** to clean text while preserving structure (headings, tables, page numbers).
+      3. **Chunk** into retrievable units sized for both retrieval precision and answer completeness.
+      4. **Enrich** (optional): add titles/section paths, contextual summaries, extracted entities.
+      5. **Embed** chunks (dense) and **index** them for lexical search (sparse/BM25).
+      6. **Store** vectors + text + metadata; version the index by embedding model and chunking config.
+
+      **Online query pipeline**
+      1. **Understand the query:** rewrite, expand, decompose or route (some queries need no retrieval at all).
+      2. **Retrieve** candidates — dense, sparse or hybrid — with **metadata filters** (tenant, permissions, date).
+      3. **Rerank** the top ~20–100 candidates with a cross-encoder or LLM for precision.
+      4. **Assemble context:** select, order, deduplicate and fit within a token budget.
+      5. **Generate** with a grounded prompt: answer only from sources, cite them, refuse when insufficient.
+      6. **Post-process:** verify citations, apply guardrails, log the trace for evaluation.
+
+      **Why it works.** It separates *knowledge* (updatable, auditable documents) from *reasoning and language* (the model).
+      You can update knowledge by re-indexing instead of re-training, enforce access control at retrieval time, and show users
+      where answers came from.
+
+      **Where it fails — the failure taxonomy you must evaluate against**
+      | Stage | Failure | Symptom |
+      |---|---|---|
+      | Ingestion/parsing | content lost (tables, scans) | "I don't know" for answerable questions |
+      | Chunking | answer split across chunks; context lost | partial or wrong answers |
+      | Retrieval | relevant chunk not in top-k | confident answers from wrong passages |
+      | Ranking/context | right chunk present but buried | ignored evidence ("lost in the middle") |
+      | Generation | unfaithful to context | hallucinated details despite good retrieval |
+      | Data | stale, contradictory or unauthorised sources | correct-looking but wrong or leaked answers |
+
+      **Retrieval and generation must be evaluated separately** (rag-10, ev-06): if the evidence was never retrieved,
+      no prompt can fix it.
+
+  - kind: diagram
+    title: Reference architecture
+    svg: |
+      <svg viewBox="0 0 680 280" role="img" aria-label="Offline path: sources, parse, chunk, embed and index into stores. Online path: query, rewrite, hybrid retrieve, rerank, assemble context, LLM, answer with citations" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui" font-size="12">
+        <defs><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <text x="10" y="20" fill="currentColor" opacity=".6">OFFLINE · indexing</text>
+        <text x="10" y="160" fill="currentColor" opacity=".6">ONLINE · per query</text>
+        <g fill="none" stroke="currentColor">
+          <rect x="10" y="35" width="80" height="40" rx="6"/><rect x="115" y="35" width="80" height="40" rx="6"/><rect x="220" y="35" width="80" height="40" rx="6"/><rect x="325" y="35" width="90" height="40" rx="6"/>
+          <rect x="455" y="25" width="210" height="80" rx="8" stroke="var(--accent, #6366f1)" stroke-width="2"/>
+          <rect x="10" y="175" width="70" height="40" rx="6"/><rect x="100" y="175" width="80" height="40" rx="6"/><rect x="200" y="175" width="95" height="40" rx="6" stroke="var(--accent, #6366f1)" stroke-width="2"/>
+          <rect x="315" y="175" width="70" height="40" rx="6"/><rect x="405" y="175" width="90" height="40" rx="6"/><rect x="515" y="175" width="60" height="40" rx="6"/><rect x="595" y="175" width="75" height="40" rx="6"/>
+        </g>
+        <g fill="currentColor" text-anchor="middle">
+          <text x="50" y="59">sources</text><text x="155" y="59">parse</text><text x="260" y="59">chunk</text><text x="370" y="52">embed +</text><text x="370" y="67">BM25 index</text>
+          <text x="560" y="50">vector index · keyword index</text><text x="560" y="68">chunk text + metadata (ACL)</text><text x="560" y="86" opacity=".6">versioned by model + config</text>
+          <text x="45" y="199">query</text><text x="140" y="192">rewrite /</text><text x="140" y="207">route</text><text x="247" y="192">hybrid retrieve</text><text x="247" y="207" opacity=".7">+ filters</text>
+          <text x="350" y="199">rerank</text><text x="450" y="192">assemble</text><text x="450" y="207">context</text><text x="545" y="199">LLM</text><text x="632" y="192">answer +</text><text x="632" y="207">citations</text>
+        </g>
+        <g stroke="currentColor" marker-end="url(#r1)">
+          <line x1="90" y1="55" x2="113" y2="55"/><line x1="195" y1="55" x2="218" y2="55"/><line x1="300" y1="55" x2="323" y2="55"/><line x1="415" y1="55" x2="453" y2="55"/>
+          <line x1="80" y1="195" x2="98" y2="195"/><line x1="180" y1="195" x2="198" y2="195"/><line x1="295" y1="195" x2="313" y2="195"/><line x1="385" y1="195" x2="403" y2="195"/><line x1="495" y1="195" x2="513" y2="195"/><line x1="575" y1="195" x2="593" y2="195"/>
+          <line x1="520" y1="107" x2="255" y2="172" stroke-dasharray="4 3"/>
+        </g>
+        <text x="340" y="255" fill="currentColor" opacity=".7" text-anchor="middle">Traces from every stage feed offline evaluation (retrieval recall@k, faithfulness, answer quality)</text>
+      </svg>
+    caption: The offline path builds versioned indexes; the online path retrieves, reranks, assembles context and generates grounded answers.
+
+  - kind: math
+    title: The probabilistic view (from the original RAG paper)
+    body: |
+      Lewis et al. (2020) treat the retrieved document $z$ as a latent variable:
+
+      $$p(y \mid x) \approx \sum_{z \in \text{top-}k(p_\eta(\cdot \mid x))} p_\eta(z \mid x)\; p_\theta(y \mid x, z)$$
+
+      - $p_\eta(z \mid x)$ — the **retriever**: how likely document $z$ is relevant to query $x$ (from embedding similarity).
+      - $p_\theta(y \mid x, z)$ — the **generator**: how likely answer $y$ is given the query and that document.
+
+      Two engineering consequences fall straight out of this formula:
+      1. If the relevant $z$ is not in the top-$k$, its term is simply **missing** — the generator cannot recover it.
+         Retrieval recall@k is an upper bound on answer quality.
+      2. The answer is only as good as the generator's **faithfulness** to $z$ — measured separately.
+
+  - kind: code
+    title: Code — a minimal, honest RAG pipeline
+    body: |
+      ```python
+      # A deliberately framework-free pipeline: every step is visible and testable.
+      from dataclasses import dataclass
+      import numpy as np
+      from rank_bm25 import BM25Okapi                  # pip install rank-bm25
+      from sentence_transformers import SentenceTransformer
+
+      @dataclass
+      class Chunk:
+          id: str
+          doc: str
+          text: str
+
+      class RagIndex:
+          def __init__(self, chunks: list[Chunk], model_name="sentence-transformers/all-MiniLM-L6-v2"):
+              self.chunks = chunks
+              self.model = SentenceTransformer(model_name)
+              self.vecs = self.model.encode([c.text for c in chunks], normalize_embeddings=True)
+              self.bm25 = BM25Okapi([c.text.lower().split() for c in chunks])
+
+          def retrieve(self, query: str, k: int = 5) -> list[Chunk]:
+              dense = self.vecs @ self.model.encode(query, normalize_embeddings=True)
+              sparse = self.bm25.get_scores(query.lower().split())
+              # Reciprocal rank fusion of the two rankings
+              fused: dict[int, float] = {}
+              for ranking in (np.argsort(-dense), np.argsort(-sparse)):
+                  for rank, i in enumerate(ranking[:50], start=1):
+                      fused[int(i)] = fused.get(int(i), 0.0) + 1 / (60 + rank)
+              best = sorted(fused, key=fused.get, reverse=True)[:k]
+              return [self.chunks[i] for i in best]
+
+      SYSTEM = ("Answer ONLY from the numbered sources. Cite sources like [1]. "
+                "If the sources are insufficient, say you don't know.")
+
+      def build_prompt(question: str, chunks: list[Chunk]) -> str:
+          sources = "\n\n".join(f'<source id="{i}" doc="{c.doc}">\n{c.text}\n</source>'
+                                for i, c in enumerate(chunks, start=1))
+          return f"{sources}\n\n<question>{question}</question>"
+
+      def answer(question: str, index: RagIndex, llm) -> dict:
+          chunks = index.retrieve(question, k=5)
+          text = llm(system=SYSTEM, user=build_prompt(question, chunks))
+          return {"answer": text, "sources": [c.id for c in chunks]}   # log this for evaluation
+      ```
+
+      In the workshop for lesson rag-04 you build this same pipeline from your own components — and something on this
+      platform starts running on it.
+
+  - kind: real_world
+    title: Real-world engineering example
+    body: |
+      An HR assistant answered "How many vacation days do new hires get?" with **25** — the number from an outdated 2021
+      policy. The current policy said 20. Tracing showed both documents were retrieved; the old one ranked first because it
+      had a cleaner heading.
+
+      The fixes were architectural, not prompt tweaks:
+      - **Ingestion:** mark superseded documents and exclude them with a metadata filter (`status = current`).
+      - **Retrieval:** boost recency for policy documents; deduplicate near-identical chunks across versions.
+      - **Generation:** instruct the model to prefer the most recent effective date and to mention conflicts.
+      - **Evaluation:** add "conflicting versions" cases to the golden set so this class of bug is caught automatically.
+
+      Most production RAG improvements look like this: data management and retrieval engineering, verified by evals.
+
+  - kind: mistakes
+    title: Common mistakes
+    body: |
+      - **Starting with a framework** before understanding each stage — you cannot debug what you cannot see.
+      - **No evaluation set.** Without labelled questions + relevant passages, every change is a guess.
+      - **Evaluating only end-to-end answers.** Measure retrieval recall@k separately from generation faithfulness.
+      - **Stuffing the context** with 20+ chunks "to be safe": higher cost, latency, and *lower* accuracy.
+      - **Ignoring access control** — retrieving documents the user may not see is a data leak, even if the LLM "doesn't mention it".
+      - **Treating retrieved text as trusted.** Documents can contain prompt injections.
+      - **Not versioning the index** by embedding model and chunking configuration.
+
+  - kind: when
+    title: When to use RAG — and when not
+    body: |
+      **Use RAG** when answers depend on a body of knowledge that is private, large, changes over time, or must be cited.
+
+      **Consider alternatives** when:
+      - The knowledge fits comfortably in the context window and changes rarely → put it in the prompt (with prompt caching).
+      - You need a new **behaviour, style or format** rather than knowledge → fine-tuning (ft-01).
+      - Answers come from **structured data** (counts, sums, joins) → text-to-SQL or tool calls, not chunk retrieval.
+      - Questions are **global** ("what are the main themes across all reports?") → GraphRAG or map-reduce summarisation (rag-09).
+
+exercise:
+  title: Diagnose a RAG failure from its trace
+  prompt: |
+    A user asks *"Does the Pro plan include SSO?"*. The system answers *"No, SSO is only available on Enterprise."*
+    — which is wrong (Pro gained SSO last month). The trace shows:
+
+    ```
+    retrieved (top 5): pricing-2024.md#plans (score 0.82), faq.md#sso (0.79), pricing-2024.md#enterprise (0.77),
+                       changelog.md#2025-10 (0.61, rank 9 → cut), security.md#saml (0.58)
+    prompt tokens: 2,950    model: small-model-x    citations in answer: [1], [3]
+    ```
+
+    1. Which pipeline stage failed? 2. Propose **three** concrete changes, each at a different stage.
+    3. How would you prove the fix works and stays fixed?
+  starter: |
+    1. Failing stage: ...
+    2. Changes:
+       - ...
+    3. Verification: ...
+  expected: A diagnosis identifying retrieval/ranking (the up-to-date changelog chunk fell outside top-k) plus stale data, with fixes spanning data, retrieval and evaluation.
+  hints:
+    - Was the correct information retrieved at all? Where did it rank?
+    - Is pricing-2024.md still the source of truth?
+    - What test would have caught this before users did?
+  solution: |
+    1. Retrieval/ranking (and data freshness): the correct evidence (changelog 2025-10) existed but ranked 9th and was cut;
+       the outdated pricing page ranked first. Generation was faithful to what it was given.
+    2. Changes:
+       - Data: update or mark pricing-2024.md as superseded; ingest the current pricing page; add effective-date metadata.
+       - Retrieval: add a recency boost/filter for pricing and plan documents; increase candidate pool and add a reranker
+         so the changelog chunk can surface; deduplicate overlapping plan chunks.
+       - Generation: instruct the model to prefer the most recent effective date and to flag conflicts between sources.
+    3. Add this question (and paraphrases) with the correct passage to the golden set; check retrieval recall@5 and answer
+       correctness before/after; run the eval suite in CI so a future regression fails the build.
+  explanation: |
+    The key skill is localising the failure: since the model faithfully cited the (outdated) sources it received,
+    tweaking the generation prompt alone would not fix it. The evidence ranking and the data lifecycle did.
+    Every fix is then locked in with an eval case — that is how RAG systems improve monotonically instead of by anecdote.
+  advanced: |
+    Design a "freshness" metric for your eval suite: for questions with time-sensitive answers, measure how often the most
+    recent relevant source is retrieved in the top-k. Which architecture changes most improve it?
+
+quiz:
+  - id: q1
+    kind: mcq
+    prompt: In the RAG formula p(y|x) ≈ Σ p(z|x) p(y|x,z) over top-k documents, what happens if the relevant document is not retrieved?
+    options: ["The generator compensates using its parameters", "Its contribution is missing — the answer cannot be grounded in it", "The reranker adds it back", "The probability is renormalised to include it"]
+    answer: 1
+    explanation: Only top-k documents contribute; retrieval recall bounds answer quality.
+  - id: q2
+    kind: multi
+    prompt: Which belong to the OFFLINE indexing path?
+    options: ["Parsing documents", "Chunking", "Reranking candidates for a query", "Embedding chunks", "Query rewriting"]
+    answer: [0, 1, 3]
+    explanation: Reranking and query rewriting happen per query, online.
+  - id: q3
+    kind: mcq
+    prompt: A RAG system answers incorrectly, but the correct passage WAS in the retrieved context and the answer contradicts it. Which stage most likely failed?
+    options: ["Ingestion", "Retrieval", "Generation (faithfulness)", "Chunking"]
+    answer: 2
+    explanation: The evidence was present; the model failed to use it faithfully.
+  - id: q4
+    kind: technical
+    prompt: Why should retrieval and generation be evaluated separately?
+    keywords: [["recall", "retrieval", "retrieved"], ["faithful", "generation", "grounded"], ["localis", "localiz", "diagnos", "which stage", "isolate"]]
+    model_answer: Because they fail differently and need different fixes. Retrieval metrics (recall@k, MRR) show whether the evidence reached the model; generation metrics (faithfulness, relevance) show whether the model used it correctly. End-to-end scores alone cannot localise a failure to a stage.
+  - id: q5
+    kind: practical
+    prompt: Name two ways to enforce document-level permissions in a multi-user RAG system and say which stage they belong to.
+    keywords: [["metadata", "filter", "acl"], ["retriev", "index", "tenant", "namespace", "collection"]]
+    model_answer: (1) Store ACL/tenant metadata with each chunk and apply a mandatory filter at retrieval time; (2) physically separate indexes/namespaces/collections per tenant. Both belong to the retrieval/index layer — never rely on the LLM to withhold unauthorised content.
+  - id: q6
+    kind: scenario
+    prompt: A manager asks you to "just send the top 30 chunks to be safe". Argue for or against with at least two technical reasons.
+    keywords: [["cost", "token"], ["latency"], ["lost in the middle", "noise", "distract", "precision", "accuracy"]]
+    model_answer: "Against, unless measured. More chunks increase token cost and latency, and add irrelevant or conflicting text that can reduce accuracy (models underuse information in the middle of long contexts and are distracted by noise). Better: retrieve a larger candidate set, rerank, and pass the best few — then validate the chosen k with the eval set."
+  - id: q7
+    kind: short
+    prompt: Give one situation where RAG is the wrong tool and what you would use instead.
+    keywords: [["structured", "sql", "aggregate", "count"], ["fine-tun", "style", "format", "behavio"], ["small", "fits", "context", "prompt"], ["global", "theme", "graph"]]
+    model_answer: "Examples: aggregate questions over structured data (use text-to-SQL/tools); changing tone or output format (fine-tuning or prompting); a small static knowledge base (put it in the prompt with caching); global thematic questions (GraphRAG or map-reduce summarisation)."
+
+flashcards:
+  - front: The two pipelines of a RAG system
+    back: "Offline indexing (ingest → parse → chunk → embed/index → store) and online querying (rewrite → retrieve → rerank → assemble → generate → verify)."
+  - front: What bounds a RAG system's answer quality?
+    back: Retrieval recall@k — evidence not retrieved cannot be used.
+  - front: Where must access control be enforced in RAG?
+    back: At retrieval/index time via mandatory metadata filters or per-tenant indexes — never by the LLM.
+  - front: RAG vs fine-tuning in one line
+    back: RAG adds knowledge (updatable, citable); fine-tuning changes behaviour, style or format.
+  - front: Why version a vector index?
+    back: Embedding model and chunking changes produce incompatible vectors; versioning enables safe re-indexing and comparisons.

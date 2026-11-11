@@ -1,0 +1,267 @@
+overview:
+  what: Scaled dot-product self-attention, causal masking and multi-head attention — derived, implemented and interpreted.
+  why: Self-attention is the core computation of every transformer and therefore every LLM. Context windows, KV caches, inference cost, long-context failures and FlashAttention all follow from how it works.
+  where: Every LLM forward pass; embedding models; vision transformers; the cost model behind context-window pricing; inference optimisations (KV cache, PagedAttention, GQA) you will study in Stage 5.
+  prerequisites: "Dot products and matrix multiplication (ma-02), softmax and cross-entropy (nn-06), the attention idea from seq2seq (sm-04), PyTorch tensors (pt-01)."
+
+sections:
+  - kind: simple
+    title: Simple explanation
+    body: |
+      In the sentence *"The animal didn't cross the street because **it** was too tired"*, to understand "it" you need to
+      look back at "animal". Self-attention lets every word **look at every other word** and decide how much each one matters
+      for understanding itself.
+
+      Each word plays three roles:
+      - a **query** — "what am I looking for?"
+      - a **key** — "what do I contain?" (used by others to decide whether to look at me)
+      - a **value** — "what information do I hand over if you look at me?"
+
+      Each word compares its query with every key, turns the scores into percentages (softmax), and takes a weighted
+      average of the values. "it" ends up mixing in a lot of "animal".
+
+      **Multi-head** attention does this several times in parallel with different learned roles — one head might track
+      grammar, another coreference, another position.
+
+  - kind: technical
+    title: Technical explanation
+    body: |
+      Let $X \in \mathbb{R}^{n \times d}$ be the $n$ token vectors entering a layer. Three learned matrices project them:
+
+      $$Q = XW_Q,\quad K = XW_K,\quad V = XW_V \qquad (W_Q, W_K \in \mathbb{R}^{d\times d_k},\; W_V \in \mathbb{R}^{d\times d_v})$$
+
+      **Scaled dot-product attention:**
+
+      $$\text{Attention}(Q,K,V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}} + M\right)V$$
+
+      1. $QK^\top \in \mathbb{R}^{n\times n}$ — every query dotted with every key: raw relevance scores.
+      2. **Scale by $\sqrt{d_k}$.** If query/key components have unit variance, a dot product of $d_k$ terms has variance $d_k$.
+         Large scores saturate the softmax (one weight ≈ 1, others ≈ 0) and gradients vanish. Dividing by $\sqrt{d_k}$ restores unit variance.
+      3. **Mask $M$.** In decoder (GPT-style) models, token $i$ may not see tokens $j > i$; set those scores to $-\infty$
+         so their softmax weight is 0. This **causal mask** is what lets one forward pass train on every next-token prediction at once.
+      4. **Row-wise softmax** turns each row into weights summing to 1.
+      5. **Multiply by $V$** — each output row is a weighted average of value vectors.
+
+      **Multi-head attention** splits the model width into $h$ heads of size $d_k = d/h$, runs attention independently in
+      each, concatenates the results and mixes them with $W_O$:
+
+      $$\text{MHA}(X) = \text{Concat}(\text{head}_1,\dots,\text{head}_h)\,W_O$$
+
+      Same total compute as one wide head, but the heads can specialise in different relationships.
+
+      **Properties that matter in engineering**
+      - **Permutation-equivariant:** attention alone has no notion of order → positional encodings are required (sm-06).
+      - **Quadratic cost:** the score matrix is $n\times n$ — doubling context length quadruples attention compute and
+        (naively) memory. This drives context-window pricing and FlashAttention.
+      - **Keys/values of past tokens never change** in a causal model → they can be cached during generation (the **KV cache**, inf-02).
+
+  - kind: diagram
+    title: Data flow of one attention head
+    svg: |
+      <svg viewBox="0 0 640 220" role="img" aria-label="X projected to Q, K, V; Q times K transpose, scaled, masked, softmax, times V gives output" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui" font-size="13">
+        <defs><marker id="s5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+        <g fill="none" stroke="currentColor">
+          <rect x="10" y="90" width="60" height="40" rx="6"/>
+          <rect x="110" y="20" width="60" height="36" rx="6"/><rect x="110" y="92" width="60" height="36" rx="6"/><rect x="110" y="164" width="60" height="36" rx="6"/>
+          <rect x="215" y="50" width="90" height="40" rx="6"/><rect x="335" y="50" width="70" height="40" rx="6"/>
+          <rect x="430" y="50" width="70" height="40" rx="6"/><rect x="525" y="90" width="100" height="44" rx="6" stroke="var(--accent, #6366f1)" stroke-width="2"/>
+        </g>
+        <g fill="currentColor" text-anchor="middle">
+          <text x="40" y="115">X (n×d)</text>
+          <text x="140" y="43">Q = XW_Q</text><text x="140" y="115">K = XW_K</text><text x="140" y="187">V = XW_V</text>
+          <text x="260" y="66">QKᵀ / √d_k</text><text x="260" y="82" opacity=".6">n × n</text>
+          <text x="370" y="75">+ mask</text><text x="465" y="75">softmax</text>
+          <text x="575" y="110">weights · V</text><text x="575" y="126" opacity=".6">n × d_v</text>
+        </g>
+        <g stroke="currentColor" marker-end="url(#s5)" fill="none">
+          <line x1="70" y1="105" x2="108" y2="40"/><line x1="70" y1="110" x2="108" y2="110"/><line x1="70" y1="115" x2="108" y2="180"/>
+          <line x1="170" y1="38" x2="213" y2="62"/><line x1="170" y1="108" x2="213" y2="78"/>
+          <line x1="305" y1="70" x2="333" y2="70"/><line x1="405" y1="70" x2="428" y2="70"/>
+          <path d="M500 70 Q 515 70 525 100"/><path d="M170 182 Q 450 190 525 125"/>
+        </g>
+      </svg>
+    caption: One head. Multi-head attention runs h of these in parallel on d/h-wide slices and concatenates the outputs.
+
+  - kind: math
+    title: Worked example (3 tokens, d_k = 2)
+    body: |
+      Suppose after projection
+
+      $$Q = \begin{bmatrix}1&0\\0&1\\1&1\end{bmatrix},\; K = \begin{bmatrix}1&0\\0&1\\1&1\end{bmatrix},\; V = \begin{bmatrix}1&0\\0&2\\3&3\end{bmatrix}$$
+
+      Scores for token 3 (query $(1,1)$): $K q_3 = (1, 1, 2)$, scaled by $\sqrt{2}$: $(0.71, 0.71, 1.41)$.
+
+      Causal mask: token 3 may see tokens 1–3, so nothing is masked for this row.
+      Softmax: $e^{0.71}=2.03,\; e^{1.41}=4.11$ → weights $\approx (0.25, 0.25, 0.50)$.
+
+      Output: $0.248\,(1,0) + 0.248\,(0,2) + 0.503\,(3,3) \approx (1.76, 2.01)$.
+
+      For token 1 the causal mask hides tokens 2 and 3, so its weights are $(1, 0, 0)$ and its output is just $v_1 = (1, 0)$.
+
+  - kind: code
+    title: Code
+    body: |
+      ```python
+      import torch
+      import torch.nn.functional as F
+
+      def self_attention(x, Wq, Wk, Wv, causal=True):
+          """x: (n, d). Returns (n, d_v) and the attention weights (n, n)."""
+          q, k, v = x @ Wq, x @ Wk, x @ Wv
+          d_k = q.shape[-1]
+          scores = q @ k.T / d_k ** 0.5                     # (n, n)
+          if causal:
+              n = x.shape[0]
+              mask = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
+              scores = scores.masked_fill(mask, float("-inf"))
+          weights = scores.softmax(dim=-1)                  # rows sum to 1
+          return weights @ v, weights
+
+      class MultiHeadAttention(torch.nn.Module):
+          def __init__(self, d_model: int, n_heads: int):
+              super().__init__()
+              assert d_model % n_heads == 0
+              self.h, self.d_k = n_heads, d_model // n_heads
+              self.qkv = torch.nn.Linear(d_model, 3 * d_model, bias=False)
+              self.out = torch.nn.Linear(d_model, d_model, bias=False)
+
+          def forward(self, x):                  # x: (batch, n, d_model)
+              B, n, d = x.shape
+              q, k, v = self.qkv(x).split(d, dim=-1)
+              # (B, n, d) -> (B, h, n, d_k)
+              q, k, v = (t.view(B, n, self.h, self.d_k).transpose(1, 2) for t in (q, k, v))
+              y = F.scaled_dot_product_attention(q, k, v, is_causal=True)  # fused (FlashAttention when available)
+              y = y.transpose(1, 2).contiguous().view(B, n, d)             # concat heads
+              return self.out(y)
+
+      torch.manual_seed(0)
+      mha = MultiHeadAttention(d_model=64, n_heads=8)
+      print(mha(torch.randn(2, 10, 64)).shape)   # torch.Size([2, 10, 64])
+      ```
+
+  - kind: real_world
+    title: Real-world engineering example
+    body: |
+      A team moved a document-QA feature from 8k-token to 128k-token prompts "to avoid building retrieval". Latency and
+      cost rose sharply, and accuracy on questions about the middle of long documents *dropped*.
+
+      Self-attention explains both effects:
+      - **Prefill compute grows quadratically with prompt length** (FlashAttention reduces memory traffic, not the $n^2$
+        arithmetic), and the **KV cache grows linearly** per token per layer — limiting how many requests fit on a GPU.
+      - Softmax weights are spread across 128k positions; models are empirically weaker at using information buried in the
+        middle (*Lost in the Middle*).
+
+      They returned to retrieval + a moderate context window, reordering the most relevant chunks to the beginning and end.
+      Understanding attention turned "just use a bigger context" from a default into a measured trade-off.
+
+  - kind: mistakes
+    title: Common mistakes
+    body: |
+      - **Forgetting the $\sqrt{d_k}$ scaling** → saturated softmax, vanishing gradients, unstable training.
+      - **Masking with 0 instead of $-\infty$** before softmax — a score of 0 still receives weight.
+      - **Applying the mask after softmax** — rows no longer sum to 1 and future information has already leaked.
+      - **Wrong reshape when splitting heads** (`view` without `transpose`) silently mixes heads across tokens.
+      - **Assuming attention weights are explanations.** They show information flow in one layer/head, not causal reasons for a prediction.
+      - **Padding tokens not masked** in batched inputs — real tokens attend to padding.
+
+  - kind: when
+    title: When to use it — and when not
+    body: |
+      - Self-attention excels when **any position may depend on any other** (language, code, documents).
+      - For **very long sequences** consider retrieval, chunking, sliding-window/sparse attention or state-space models
+        rather than paying the full $O(n^2)$ cost.
+      - For **small, local-structure problems** (tabular data, simple time series), CNNs, RNNs or gradient-boosted trees are often
+        cheaper and just as good.
+      - In practice, **call `F.scaled_dot_product_attention`** (fused, memory-efficient kernels) rather than hand-writing it.
+
+exercise:
+  title: Implement causal self-attention and verify it
+  prompt: |
+    Implement `causal_attention(q, k, v)` for tensors of shape `(n, d)` using only basic tensor operations (no
+    `scaled_dot_product_attention`). Then verify your result against
+    `torch.nn.functional.scaled_dot_product_attention(q, k, v, is_causal=True)` on random inputs.
+  starter: |
+    import torch
+
+    def causal_attention(q, k, v):
+        ...
+  expected: |
+    torch.allclose(causal_attention(q, k, v),
+                   F.scaled_dot_product_attention(q, k, v, is_causal=True), atol=1e-6)  # True
+  hints:
+    - "`torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)` marks the future positions."
+    - Fill masked scores with `float('-inf')` BEFORE the softmax.
+    - Scale by `q.shape[-1] ** 0.5`.
+  solution: |
+    import torch
+    import torch.nn.functional as F
+
+    def causal_attention(q, k, v):
+        n, d_k = q.shape
+        scores = q @ k.transpose(-2, -1) / d_k ** 0.5
+        future = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
+        scores = scores.masked_fill(future, float("-inf"))
+        return scores.softmax(dim=-1) @ v
+
+    q, k, v = (torch.randn(6, 16) for _ in range(3))
+    print(torch.allclose(causal_attention(q, k, v),
+                         F.scaled_dot_product_attention(q, k, v, is_causal=True), atol=1e-6))
+  explanation: |
+    The upper-triangular mask (above the diagonal) marks positions j > i. Setting those scores to −∞ makes their
+    exponentials 0, so each row's softmax distributes weight only over the current and previous tokens. The first row
+    therefore attends only to itself. Matching PyTorch's fused kernel confirms the scaling and masking are correct.
+  advanced: |
+    Extend to batched multi-head inputs of shape (B, h, n, d_k) and add a key-padding mask. Then measure peak memory of
+    your version vs `scaled_dot_product_attention` for n = 4096 on a GPU and explain the difference (FlashAttention).
+
+quiz:
+  - id: q1
+    kind: mcq
+    prompt: Why are attention scores divided by √d_k?
+    options: ["To make them positive", "To keep their variance ≈ 1 so softmax doesn't saturate", "To normalise rows to sum to 1", "To reduce memory use"]
+    answer: 1
+    explanation: Dot products of d_k unit-variance terms have variance d_k; large magnitudes push softmax into saturation and shrink gradients.
+  - id: q2
+    kind: mcq
+    prompt: Sequence length doubles from 4k to 8k tokens. How does the size of the attention score matrix change?
+    options: ["Doubles", "Quadruples", "Stays the same", "Increases by √2"]
+    answer: 1
+    explanation: "The score matrix is n × n: (2n)² = 4n²."
+  - id: q3
+    kind: multi
+    prompt: Which statements about causal self-attention are true?
+    options: ["Token i cannot attend to tokens after i", "Masked scores are set to -inf before softmax", "It allows training on every next-token prediction in one forward pass", "It makes the model aware of word order without positional encodings"]
+    answer: [0, 1, 2]
+    explanation: The causal mask restricts visibility but attention remains order-agnostic beyond that; positional encodings are still needed.
+  - id: q4
+    kind: technical
+    prompt: Explain the roles of queries, keys and values in one or two sentences each.
+    keywords: [["query", "looking for"], ["key", "match", "compared"], ["value", "information", "content", "weighted"]]
+    model_answer: A query represents what the current token is looking for; keys represent what each token offers and are compared with the query (dot product) to produce relevance scores; values carry the information that is mixed into the output, weighted by the softmaxed scores.
+  - id: q5
+    kind: practical
+    prompt: "A model has d_model = 4096 and 32 heads. What is d_k per head, and how does multi-head compute compare with one 4096-wide head?"
+    keywords: [["128"], ["same", "similar", "equal", "comparable"]]
+    model_answer: "d_k = 4096 / 32 = 128. Total projection and attention compute is about the same as a single head of width 4096; the work is just split into 32 independent subspaces that can specialise."
+  - id: q6
+    kind: scenario
+    prompt: During generation, your naive implementation recomputes K and V for the whole prefix at every new token and is very slow. What property of causal attention lets you fix this, and how?
+    keywords: [["past", "previous", "prefix"], ["don't change", "do not change", "unchanged", "fixed"], ["cache", "kv cache"]]
+    model_answer: In a causal model the keys and values of earlier tokens never change when new tokens are appended, so they can be cached. Each step computes Q, K, V only for the new token, appends K and V to the KV cache, and attends over the cached keys/values — turning per-step cost from re-processing the full prefix into a single-token update.
+  - id: q7
+    kind: short
+    prompt: Why does attention need positional encodings?
+    keywords: [["order", "position"], ["permutation", "set", "invariant", "equivariant"]]
+    model_answer: Attention treats its inputs as a set — permuting the tokens just permutes the outputs — so without positional information the model cannot distinguish word order.
+
+flashcards:
+  - front: Scaled dot-product attention formula
+    back: "softmax(QKᵀ / √d_k + M) V"
+  - front: Purpose of the causal mask
+    back: Prevent token i from attending to tokens j > i (set their scores to −∞ before softmax).
+  - front: Complexity of self-attention in sequence length n
+    back: "O(n²) compute and score-matrix memory (FlashAttention avoids materialising it, but compute stays quadratic)."
+  - front: Why multi-head attention?
+    back: Several heads attend in different learned subspaces in parallel, specialising in different relationships, for about the same compute.
+  - front: What makes the KV cache possible?
+    back: In causal attention, keys/values of past tokens never change, so they can be stored and reused at each generation step.

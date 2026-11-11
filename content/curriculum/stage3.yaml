@@ -1,0 +1,434 @@
+# Stage 3 — Building LLM Applications
+id: s3
+order: 3
+title: Building LLM Applications
+summary: >-
+  Integrate models through APIs, engineer prompts and context, understand embeddings and retrieval from the
+  ground up, build RAG systems that work — and measure them with real evaluations.
+modules:
+  - id: m12
+    title: LLM APIs & Model Integration
+    summary: Calling hosted and local models reliably, with streaming, structure, tools, cost control and fallbacks.
+    prerequisites: [m10, m02]
+    project: proj-module-llm-service
+    lessons:
+      - id: api-01
+        title: "Calling LLM APIs: OpenAI, Anthropic & Gemini"
+        minutes: 75
+        level: beginner
+        covers: ["7: OpenAI API", "7: Anthropic API", "7: Google Gemini API", "7: API Authentication"]
+        objectives:
+          - Send chat/messages requests to three providers and compare their request shapes
+          - Manage API keys securely (env vars, secret managers, never in git)
+          - Write a thin provider-agnostic client interface
+        resources: [doc-openai!, doc-anthropic!, doc-gemini!]
+      - id: api-02
+        title: Open-Weight Models Locally
+        minutes: 60
+        level: beginner
+        covers: ["7: Open-Weight Models"]
+        objectives:
+          - Run an open-weight model locally with Ollama and through an OpenAI-compatible endpoint
+          - Choose a model size/quantization that fits your hardware
+          - Compare quality, latency and cost with hosted APIs
+        resources: [doc-ollama!, doc-hf-transformers]
+      - id: api-03
+        title: Streaming Responses
+        minutes: 45
+        level: intermediate
+        covers: ["7: Streaming Responses"]
+        objectives:
+          - Consume server-sent event streams from provider SDKs
+          - Measure time-to-first-token vs total latency
+          - Handle partial output, cancellation and stream errors
+        resources: [doc-openai!, doc-anthropic]
+      - id: api-04
+        title: Structured Outputs
+        minutes: 60
+        level: intermediate
+        covers: ["7: Structured Outputs"]
+        objectives:
+          - Get schema-valid JSON with structured-output modes and Pydantic
+          - Validate and repair outputs; design schemas that models fill reliably
+          - Compare JSON mode, tool-based extraction and constrained decoding
+        resources: [doc-openai!, doc-pydantic!, doc-anthropic]
+      - id: api-05
+        title: Function & Tool Calling
+        minutes: 75
+        level: intermediate
+        covers: ["7: Function & Tool Calling"]
+        objectives:
+          - Define tools with JSON schemas and run the tool-call loop
+          - Handle parallel tool calls and tool errors
+          - Validate tool arguments before executing anything
+        resources: [doc-anthropic!, doc-openai!]
+      - id: api-06
+        title: Multimodal APIs
+        minutes: 45
+        level: intermediate
+        covers: ["7: Multimodal APIs"]
+        objectives:
+          - Send images and documents to vision-capable models
+          - Estimate token costs of images
+          - Know the failure modes of vision models (small text, counting, layout)
+        resources: [doc-gemini!, doc-anthropic]
+      - id: api-07
+        title: "Reliability: Errors, Retries & Rate Limits"
+        minutes: 60
+        level: intermediate
+        covers: ["7: Error Handling & Retries", "7: Rate Limits"]
+        objectives:
+          - Classify retryable vs non-retryable errors
+          - Implement exponential backoff with jitter and idempotency
+          - Respect rate limits with client-side token buckets and concurrency limits
+        resources: [doc-openai!, doc-anthropic, book-sre]
+      - id: api-08
+        title: Token Usage, Cost Tracking, Routing & Fallbacks
+        minutes: 60
+        level: intermediate
+        covers: ["7: Token Usage & Cost Tracking", "7: Model Routing & Fallbacks"]
+        objectives:
+          - Log tokens and cost per request, user and feature
+          - Route requests between cheap and strong models by difficulty
+          - Fail over between providers without changing application code
+        resources: [book-ai-engineering!, art-eugeneyan-patterns]
+        workshop: forge-5
+
+  - id: m13
+    title: Prompt & Context Engineering
+    summary: Designing instructions and context deliberately — and measuring whether a prompt is actually better.
+    prerequisites: [m12]
+    lessons:
+      - id: pe-01
+        title: System & User Instructions
+        minutes: 45
+        level: beginner
+        covers: ["8: System & User Instructions"]
+        objectives:
+          - Separate role, task, constraints and format in instructions
+          - Use system prompts for stable behaviour and user turns for task data
+          - Write instructions that are specific, positive and testable
+        resources: [doc-anthropic!, course-dlai-prompting!]
+      - id: pe-02
+        title: Few-Shot Prompting & Chain-of-Thought
+        minutes: 60
+        level: intermediate
+        covers: ["8: Few-Shot Prompting", "8: Chain-of-Thought Concepts"]
+        objectives:
+          - Choose and order few-shot examples; avoid example leakage
+          - Explain chain-of-thought and when reasoning models make it unnecessary
+          - Trade reasoning tokens against latency and cost
+        resources: [paper-gpt3!, paper-cot!, art-weng-prompting]
+      - id: pe-03
+        title: Structured Prompting & Prompt Templates
+        minutes: 45
+        level: intermediate
+        covers: ["8: Structured Prompting", "8: Prompt Templates"]
+        objectives:
+          - Structure prompts with delimiters/XML tags and clear sections
+          - Build parameterised templates with safe variable injection
+          - Ground a prompt in provided sources with citation instructions
+        resources: [doc-anthropic!, art-weng-prompting]
+        workshop: forge-6
+      - id: pe-04
+        title: Context Window Management & Compression
+        minutes: 60
+        level: intermediate
+        covers: ["8: Context Window Management", "8: Context Compression"]
+        objectives:
+          - Budget tokens across instructions, history, retrieved context and output
+          - Summarise, truncate and compact conversation history
+          - Measure quality loss from compression
+        resources: [art-anthropic-context-eng!, paper-lost-middle]
+      - id: pe-05
+        title: Context Engineering & Context Selection
+        minutes: 60
+        level: intermediate
+        covers: ["8: Context Engineering", "8: Context Selection & Retrieval"]
+        objectives:
+          - Treat context as a scarce resource assembled per request
+          - Select context by relevance, recency and authority
+          - Design just-in-time context retrieval for agents
+        resources: [art-anthropic-context-eng!, book-ai-engineering]
+      - id: pe-06
+        title: Prompt Versioning & Prompt Evaluation
+        minutes: 60
+        level: intermediate
+        covers: ["8: Prompt Versioning", "8: Prompt Evaluation"]
+        objectives:
+          - Version prompts like code with changelogs and IDs in traces
+          - Build a small eval set and compare prompt variants quantitatively
+          - Avoid overfitting prompts to a handful of examples
+        resources: [art-hamel-evals!, doc-langfuse]
+      - id: pe-07
+        title: Prompt Injection Defense
+        minutes: 60
+        level: intermediate
+        covers: ["8: Prompt Injection Defense"]
+        objectives:
+          - Distinguish direct from indirect prompt injection
+          - Apply layered defences — privilege separation, input/output filtering, spotlighting
+          - Explain why no prompt alone is a security boundary
+        resources: [paper-indirect-injection!, int-gandalf!, doc-owasp-llm]
+
+  - id: m14
+    title: Embeddings & Vector Search
+    summary: What vectors mean, how similarity works, how search scales — and only then, vector databases.
+    prerequisites: [m05, m10]
+    project: proj-mini-semantic-search
+    lessons:
+      - id: emb-01
+        title: What Are Embeddings?
+        minutes: 75
+        level: intermediate
+        covers: ["9: What Are Embeddings?"]
+        objectives:
+          - Explain an embedding as a learned coordinate in a space where distance encodes meaning
+          - Describe how embedding models are trained (contrastive learning) and pooled
+          - Reason about dimensions, normalisation and what an embedding cannot capture
+        resources: [art-illustrated-word2vec!, yt-3b1b-transformers!, book-slp3, paper-sbert]
+      - id: emb-02
+        title: Similarity Metrics & Cosine Similarity
+        minutes: 60
+        level: intermediate
+        covers: ["9: Similarity Metrics", "9: Cosine Similarity"]
+        objectives:
+          - Compute dot product, cosine similarity, Euclidean and Manhattan distance
+          - Prove when cosine, dot product and Euclidean rankings coincide (unit vectors)
+          - Pick the metric an embedding model was trained for
+        resources: [yt-statquest-cosine!, yt-3b1b-dot]
+      - id: emb-03
+        title: Dense & Sparse Embeddings and Embedding Models
+        minutes: 60
+        level: intermediate
+        covers: ["9: Dense & Sparse Embeddings", "9: Embedding Models"]
+        objectives:
+          - Compare dense, sparse (BM25, SPLADE) and multi-vector (ColBERT) representations
+          - Choose an embedding model using MTEB and your own evaluation
+          - Understand Matryoshka truncation and quantized embeddings
+        resources: [doc-sbert!, int-mteb!, paper-splade, paper-colbert, paper-matryoshka, paper-mteb]
+      - id: emb-04
+        title: Semantic Search
+        minutes: 60
+        level: intermediate
+        covers: ["9: Semantic Search"]
+        objectives:
+          - Build brute-force semantic search over a corpus in NumPy
+          - Evaluate it with recall@k and MRR against BM25
+          - Explain asymmetric (query vs passage) search and instruction prefixes
+        resources: [doc-sbert!, paper-dpr]
+      - id: emb-05
+        title: Vector Indexing & Approximate Nearest Neighbours
+        minutes: 75
+        level: advanced
+        covers: ["9: Vector Indexing", "9: Approximate Nearest Neighbors"]
+        objectives:
+          - Explain flat, IVF, HNSW and product-quantization indexes
+          - Measure the recall/latency/memory trade-off of ANN parameters
+          - Know when brute force is good enough
+        resources: [paper-hnsw!, doc-faiss!]
+      - id: emb-06
+        title: "Vector Databases: Pinecone, Qdrant, Weaviate, Milvus & Chroma"
+        minutes: 75
+        level: intermediate
+        covers: ["9: Vector Databases", "9: Pinecone", "9: Qdrant", "9: Weaviate", "9: Milvus", "9: Chroma"]
+        objectives:
+          - Compare managed vs self-hosted vector databases on features, scale and cost
+          - Load and query the same data in Chroma and Qdrant
+          - Decide when pgvector in Postgres is the better answer
+        resources: [doc-qdrant!, doc-chroma!, doc-pinecone, doc-weaviate, doc-milvus, yt-ibm-vectordb]
+      - id: emb-07
+        title: Metadata Filtering & Hybrid Search
+        minutes: 60
+        level: intermediate
+        covers: ["9: Metadata Filtering", "9: Hybrid Search"]
+        objectives:
+          - Combine vector search with pre- and post-filters
+          - Fuse BM25 and dense results with reciprocal rank fusion
+          - Measure when hybrid beats either alone
+        resources: [doc-qdrant!, doc-weaviate]
+
+  - id: m15
+    title: Retrieval-Augmented Generation
+    summary: Design, build, evaluate and optimise RAG — comparing strategies, not copying a tutorial.
+    prerequisites: [m13, m14]
+    project: proj-module-doc-search
+    lessons:
+      - id: rag-01
+        title: RAG Architecture
+        minutes: 75
+        level: intermediate
+        covers: ["10: RAG Architecture"]
+        objectives:
+          - Draw the offline (indexing) and online (query) paths of a RAG system
+          - Explain why RAG reduces hallucination and where it still fails
+          - Identify the knobs that matter at each stage
+        resources: [paper-rag!, yt-ibm-rag!, book-ai-engineering, yt-fcc-rag-scratch]
+      - id: rag-02
+        title: Document Ingestion & Parsing
+        minutes: 60
+        level: intermediate
+        covers: ["10: Document Ingestion", "10: Document Parsing"]
+        objectives:
+          - Ingest PDFs, HTML, Markdown and Office files with metadata
+          - Handle tables, headers/footers, scanned pages and layout
+          - Make ingestion incremental and idempotent
+        resources: [doc-llamaindex!, paper-layoutlm]
+      - id: rag-03
+        title: Text Chunking Strategies & Overlap
+        minutes: 60
+        level: intermediate
+        covers: ["10: Text Chunking Strategies", "10: Overlapping Chunks"]
+        objectives:
+          - Compare fixed, recursive, structure-aware and semantic chunking
+          - Choose chunk size and overlap empirically
+          - Keep chunk-level metadata for citations
+        resources: [book-ai-engineering!, art-anthropic-contextual]
+      - id: rag-04
+        title: Embedding Generation & Vector Storage
+        minutes: 60
+        level: intermediate
+        covers: ["10: Embedding Generation", "10: Vector Storage"]
+        objectives:
+          - Batch-embed a corpus with caching and retries
+          - Store vectors with metadata and plan re-indexing when models change
+          - Assemble an end-to-end retrieve → prompt → generate pipeline
+        resources: [doc-sbert!, doc-qdrant]
+        workshop: forge-7
+      - id: rag-05
+        title: Query Transformation & Multi-Query Retrieval
+        minutes: 60
+        level: advanced
+        covers: ["10: Query Transformation", "10: Multi-Query Retrieval"]
+        objectives:
+          - Rewrite, decompose and expand queries (incl. HyDE)
+          - Retrieve with multiple query variants and fuse results
+          - Measure whether transformations actually help
+        resources: [paper-hyde!, yt-fcc-rag-scratch]
+      - id: rag-06
+        title: Retrieval Strategies & Hybrid Retrieval
+        minutes: 60
+        level: advanced
+        covers: ["10: Retrieval Strategies", "10: Hybrid Retrieval"]
+        objectives:
+          - Compare dense, sparse and hybrid retrieval on your data
+          - Tune top-k, filters and MMR diversity
+          - Route queries to different indexes
+        resources: [art-anthropic-contextual!, doc-weaviate]
+      - id: rag-07
+        title: Reranking
+        minutes: 45
+        level: advanced
+        covers: ["10: Reranking"]
+        objectives:
+          - Explain bi-encoder vs cross-encoder trade-offs
+          - Add a reranking stage and measure precision gains vs latency
+          - Use LLM-based reranking where appropriate
+        resources: [doc-sbert!, paper-colbert]
+      - id: rag-08
+        title: Contextual & Parent-Child Retrieval
+        minutes: 60
+        level: advanced
+        covers: ["10: Contextual Retrieval", "10: Parent-Child Retrieval"]
+        objectives:
+          - Prepend chunk-specific context before embedding (contextual retrieval)
+          - Retrieve small chunks but return their parent sections
+          - Evaluate both against a baseline
+        resources: [art-anthropic-contextual!, doc-llamaindex]
+      - id: rag-09
+        title: Graph RAG & Agentic RAG
+        minutes: 75
+        level: advanced
+        covers: ["10: Graph RAG", "10: Agentic RAG"]
+        objectives:
+          - Build an entity graph and answer global questions with GraphRAG
+          - Let an agent decide when and where to retrieve
+          - Decide when these added complexities are justified
+        resources: [paper-graphrag!, paper-self-rag]
+      - id: rag-10
+        title: RAG Evaluation & Advanced Optimisation
+        minutes: 75
+        level: advanced
+        covers: ["10: RAG Evaluation", "10: Advanced RAG Optimization"]
+        objectives:
+          - Evaluate retrieval (recall@k, MRR) and generation (faithfulness, relevance) separately
+          - Run ablations over chunking, embedding models and rerankers
+          - Optimise latency and cost with caching and smaller models
+        resources: [paper-ragas!, doc-ragas!, art-hamel-evals]
+
+  - id: m16
+    title: AI Evaluation & Testing
+    summary: Eval-driven development — the skill that separates demos from products.
+    prerequisites: [m15]
+    project: proj-module-eval-harness
+    lessons:
+      - id: ev-01
+        title: Why Evaluation Matters & Testing LLM Applications
+        minutes: 60
+        level: intermediate
+        covers: ["15: Why AI Evaluation Matters", "15: Unit & Integration Testing"]
+        objectives:
+          - Explain why non-deterministic systems need statistical evaluation
+          - Write unit tests for deterministic parts and integration tests with mocked LLMs
+          - Set up a repeatable eval loop
+        resources: [art-hamel-evals!, book-ai-engineering!]
+      - id: ev-02
+        title: Golden & Evaluation Datasets
+        minutes: 60
+        level: intermediate
+        covers: ["15: Golden Datasets", "15: Evaluation Datasets"]
+        objectives:
+          - Build golden sets from real traffic, experts and synthetic generation
+          - Cover edge cases and adversarial inputs; version the set
+          - Size an eval set using confidence intervals
+        resources: [art-hamel-evals!, book-ai-engineering]
+      - id: ev-03
+        title: "Metrics: Accuracy, Faithfulness, Groundedness & Relevance"
+        minutes: 60
+        level: intermediate
+        covers: ["15: Model Accuracy", "15: Faithfulness & Groundedness", "15: Relevance & Context Precision"]
+        objectives:
+          - Choose exact-match, F1, rubric or model-graded metrics
+          - Measure faithfulness/groundedness against retrieved context
+          - Measure context precision and recall
+        resources: [paper-ragas!, doc-ragas]
+      - id: ev-04
+        title: LLM-as-a-Judge & Human Evaluation
+        minutes: 60
+        level: intermediate
+        covers: ["15: LLM-as-a-Judge", "15: Human Evaluation"]
+        objectives:
+          - Design judge prompts with rubrics and pairwise comparisons
+          - Measure and mitigate judge bias; calibrate against human labels
+          - Run efficient human review with clear guidelines
+        resources: [paper-llm-judge!, art-hamel-evals]
+      - id: ev-05
+        title: Hallucination Detection
+        minutes: 45
+        level: intermediate
+        covers: ["15: Hallucination Detection"]
+        objectives:
+          - Classify intrinsic vs extrinsic hallucinations
+          - Detect unsupported claims with NLI/claim-checking and self-consistency
+          - Design UX that surfaces uncertainty
+        resources: [book-ai-engineering!, art-eugeneyan-patterns]
+      - id: ev-06
+        title: Evaluating RAG Systems & Agents
+        minutes: 60
+        level: advanced
+        covers: ["15: RAG Evaluation", "15: Agent Evaluation"]
+        objectives:
+          - Build component and end-to-end RAG evals
+          - Evaluate agents on task success, trajectory and cost
+          - Use simulation environments for agent testing
+        resources: [doc-ragas!, book-ai-engineering]
+      - id: ev-07
+        title: Regression Testing, Online/Offline Evaluation & Observability
+        minutes: 60
+        level: advanced
+        covers: ["15: Regression Testing", "15: Online & Offline Evaluation", "15: Evals & Observability"]
+        objectives:
+          - Gate deployments on eval regressions in CI
+          - Run A/B tests and collect implicit/explicit feedback online
+          - Connect traces to evals to close the loop
+        resources: [doc-langfuse!, art-hamel-evals]

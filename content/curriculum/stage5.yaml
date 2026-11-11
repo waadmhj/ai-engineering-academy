@@ -1,0 +1,436 @@
+# Stage 5 — Production AI Engineering
+id: s5
+order: 5
+title: Production AI Engineering
+summary: >-
+  Backends that serve AI reliably, inference engineering, MLOps/LLMOps, cloud and DevOps, security and
+  responsible AI, and the system-design thinking that ties them together.
+modules:
+  - id: m21
+    title: Backend Engineering for AI
+    summary: FastAPI services that stream, queue, cache, authenticate and scale.
+    prerequisites: [m02, m04, m12]
+    project: proj-module-ai-backend
+    lessons:
+      - id: be-01
+        title: FastAPI in Depth (and Flask)
+        minutes: 75
+        level: intermediate
+        covers: ["17: FastAPI", "17: Flask"]
+        objectives:
+          - Structure a FastAPI app with routers, dependencies, settings and lifespan events
+          - Validate requests/responses with Pydantic and generate OpenAPI docs
+          - Compare FastAPI (ASGI) with Flask (WSGI)
+        resources: [doc-fastapi!, yt-fcc-fastapi, doc-flask]
+      - id: be-02
+        title: REST API Design for AI Services
+        minutes: 45
+        level: intermediate
+        covers: ["17: REST APIs"]
+        objectives:
+          - Design endpoints for long-running AI jobs (async job pattern)
+          - Version APIs and handle errors consistently
+          - Document APIs for consumers
+        resources: [doc-fastapi!, doc-owasp-api]
+      - id: be-03
+        title: "Streaming: SSE & WebSockets"
+        minutes: 60
+        level: intermediate
+        covers: ["17: WebSockets & Streaming"]
+        objectives:
+          - Stream LLM tokens to browsers with server-sent events
+          - Build bidirectional chat with WebSockets
+          - Handle disconnects, backpressure and cancellation
+        resources: [doc-fastapi!]
+      - id: be-04
+        title: Async Processing, Background Jobs & Message Queues
+        minutes: 75
+        level: intermediate
+        covers: ["17: Async Processing", "17: Background Jobs", "17: Message Queues"]
+        objectives:
+          - Choose between in-process tasks, Celery/RQ workers and queues
+          - Use RabbitMQ/Redis streams for work queues and pub/sub
+          - Make jobs idempotent and retry-safe
+        resources: [doc-celery!, doc-rabbitmq!, doc-redis]
+      - id: be-05
+        title: PostgreSQL, Redis & Caching
+        minutes: 60
+        level: intermediate
+        covers: ["17: PostgreSQL", "17: Redis & Caching"]
+        objectives:
+          - Use SQLAlchemy with migrations and connection pooling
+          - Cache with Redis (TTL, invalidation, stampede protection)
+          - Cache LLM responses exactly and semantically
+        resources: [doc-redis!, doc-postgres-tutorial]
+      - id: be-06
+        title: Authentication, Authorization, Rate Limiting & API Security
+        minutes: 75
+        level: intermediate
+        covers: ["17: Authentication & Authorization", "17: Rate Limiting", "17: API Security"]
+        objectives:
+          - Implement OAuth2/JWT authentication and role-based authorization
+          - Rate-limit per user and per API key with token buckets
+          - Defend against the OWASP API Top 10
+        resources: [doc-owasp-api!, doc-fastapi!]
+      - id: be-07
+        title: Microservices Basics & AI Application Architecture
+        minutes: 60
+        level: advanced
+        covers: ["17: Microservices Basics", "17: AI Application Architecture"]
+        objectives:
+          - Decide between a modular monolith and microservices
+          - Separate gateway, orchestration, retrieval, model and evaluation services
+          - Design for observability from day one
+        resources: [book-ai-engineering!, book-ddia]
+
+  - id: m22
+    title: AI Infrastructure & Inference Engineering
+    summary: What actually happens when a model generates a token — and how to make it fast and cheap.
+    prerequisites: [m10, m08]
+    project: proj-module-inference-bench
+    lessons:
+      - id: inf-01
+        title: "LLM Inference Fundamentals: Prefill vs Decode"
+        minutes: 60
+        level: advanced
+        covers: ["16: LLM Inference Fundamentals", "16: Prefill vs Decode"]
+        objectives:
+          - Explain autoregressive generation and sampling
+          - Distinguish compute-bound prefill from memory-bound decode
+          - Measure TTFT, TPOT and throughput
+        resources: [book-ai-engineering!, yt-vllm-paged]
+      - id: inf-02
+        title: KV Cache Management & PagedAttention
+        minutes: 60
+        level: advanced
+        covers: ["16: KV Cache Management", "16: PagedAttention"]
+        objectives:
+          - Compute KV-cache memory per token for a model
+          - Explain fragmentation and paging; prefix caching
+          - Explain MQA/GQA as KV-cache optimisations
+        resources: [paper-vllm!, yt-vllm-paged!]
+      - id: inf-03
+        title: Continuous Batching & Speculative Decoding
+        minutes: 60
+        level: advanced
+        covers: ["16: Continuous Batching", "16: Speculative Decoding"]
+        objectives:
+          - Compare static, dynamic and continuous batching
+          - Explain draft-and-verify speculative decoding and acceptance rates
+          - Tune batch size for latency vs throughput
+        resources: [paper-speculative!, doc-vllm]
+      - id: inf-04
+        title: "Model Compression: Quantization, Pruning & Distillation"
+        minutes: 75
+        level: advanced
+        covers: ["16: Quantization", "16: Model Pruning", "16: Knowledge Distillation"]
+        objectives:
+          - Compare int8, int4, GPTQ, AWQ and GGUF quantization
+          - Explain structured vs unstructured pruning
+          - Distil a large model into a smaller one for a narrow task
+        resources: [paper-gptq!, paper-llm-int8, paper-distillation!, paper-lottery]
+      - id: inf-05
+        title: "Model Serving: vLLM, SGLang, Ollama & TensorRT-LLM"
+        minutes: 75
+        level: advanced
+        covers: ["16: Model Serving", "16: vLLM", "16: SGLang", "16: Ollama", "16: TensorRT-LLM"]
+        objectives:
+          - Serve a model with vLLM behind an OpenAI-compatible API
+          - Compare vLLM, SGLang, Ollama and TensorRT-LLM for different deployments
+          - Benchmark a serving engine under load
+        resources: [doc-vllm!, doc-sglang, doc-ollama, doc-tensorrt-llm, paper-sglang]
+      - id: inf-06
+        title: GPU Memory, Latency/Throughput Optimisation & Distributed Inference
+        minutes: 75
+        level: advanced
+        covers: ["16: GPU Memory Management", "16: Latency & Throughput Optimization", "16: Distributed Inference Basics"]
+        objectives:
+          - Budget GPU memory for weights, KV cache and activations
+          - Apply FlashAttention, compilation and kernel fusion
+          - Explain tensor, pipeline and data parallelism for inference
+        resources: [paper-flashattention!, doc-vllm, book-ai-engineering]
+
+  - id: m23
+    title: MLOps & LLMOps
+    summary: Track, version, trace, monitor and continuously evaluate AI systems.
+    prerequisites: [m16, m21]
+    lessons:
+      - id: ops-01
+        title: ML & LLM Lifecycle Management
+        minutes: 45
+        level: intermediate
+        covers: ["18: ML & LLM Lifecycle Management"]
+        objectives:
+          - Map the lifecycle from data to monitoring for ML and for LLM apps
+          - Identify what differs for prompt-based systems
+          - Define ownership and release processes
+        resources: [book-dmls!, course-madewithml!]
+      - id: ops-02
+        title: "Experiment Tracking: MLflow & Weights & Biases"
+        minutes: 60
+        level: intermediate
+        covers: ["18: Experiment Tracking", "18: MLflow", "18: Weights & Biases"]
+        objectives:
+          - Log parameters, metrics, artifacts and models
+          - Compare runs and register models
+          - Choose between MLflow and W&B
+        resources: [doc-mlflow!, doc-wandb]
+      - id: ops-03
+        title: "Versioning: Prompts, Models & Data (DVC)"
+        minutes: 60
+        level: intermediate
+        covers: ["18: Prompt Versioning", "18: Model Versioning", "18: Data Versioning (DVC)"]
+        objectives:
+          - Version data with DVC alongside Git
+          - Version models in a registry and prompts in a prompt store
+          - Reproduce any past result from versions
+        resources: [doc-dvc!, doc-mlflow, doc-langfuse]
+      - id: ops-04
+        title: "Tracing & Observability: Langfuse & LangSmith"
+        minutes: 60
+        level: intermediate
+        covers: ["18: Tracing & Observability", "18: Langfuse", "18: LangSmith"]
+        objectives:
+          - Instrument LLM calls, retrievals and tool calls as traces/spans
+          - Debug a bad answer from its trace
+          - Compare self-hosted Langfuse with LangSmith
+        resources: [doc-langfuse!, doc-langsmith]
+      - id: ops-05
+        title: Cost Monitoring & Model Monitoring
+        minutes: 45
+        level: intermediate
+        covers: ["18: Cost Monitoring", "18: Model Monitoring"]
+        objectives:
+          - Build cost dashboards per feature and tenant
+          - Detect drift and quality degradation in production
+          - Alert on SLOs for latency, errors and quality
+        resources: [book-dmls!, book-sre]
+      - id: ops-06
+        title: CI/CD for AI & Automated Evaluation Pipelines
+        minutes: 60
+        level: advanced
+        covers: ["18: CI/CD for AI Applications", "18: Automated Evaluation Pipelines"]
+        objectives:
+          - Run tests and evals on every pull request
+          - Gate releases on eval thresholds and canary deployments
+          - Schedule nightly evals against production samples
+        resources: [doc-gh-actions!, course-madewithml]
+
+  - id: m24
+    title: Cloud & DevOps
+    summary: Containers, cloud platforms, Kubernetes, CI/CD, infrastructure as code and GPU infrastructure.
+    prerequisites: [m21]
+    project: proj-module-deploy
+    lessons:
+      - id: cl-01
+        title: Docker
+        minutes: 75
+        level: beginner
+        covers: ["19: Docker"]
+        objectives:
+          - Write efficient multi-stage Dockerfiles for Python AI services
+          - Run multi-service stacks with Docker Compose
+          - Handle GPU containers and image size
+        resources: [yt-nana-docker!, doc-docker!]
+      - id: cl-02
+        title: "AWS Core: S3, EC2 & Lambda"
+        minutes: 75
+        level: beginner
+        covers: ["19: AWS", "19: S3", "19: EC2", "19: Lambda"]
+        objectives:
+          - Store and serve data with S3 securely (IAM, presigned URLs)
+          - Launch and size EC2 instances incl. GPU types
+          - Know Lambda's limits for AI workloads
+        resources: [doc-aws-s3!, doc-aws-ec2!, doc-aws-lambda]
+      - id: cl-03
+        title: Containers on AWS (ECS & EKS) & SageMaker Basics
+        minutes: 60
+        level: intermediate
+        covers: ["19: ECS & EKS", "19: SageMaker Basics"]
+        objectives:
+          - Deploy a container to ECS Fargate
+          - Know when EKS is worth its complexity
+          - Host a model on a SageMaker endpoint
+        resources: [doc-aws-ecs!, doc-aws-eks, doc-sagemaker]
+      - id: cl-04
+        title: Google Cloud Vertex AI & Microsoft Azure AI
+        minutes: 45
+        level: intermediate
+        covers: ["19: Google Cloud & Vertex AI", "19: Microsoft Azure AI"]
+        objectives:
+          - Map AWS services to their GCP and Azure equivalents
+          - Call Gemini on Vertex AI and models on Azure AI Foundry
+          - Weigh data residency and enterprise requirements
+        resources: [doc-vertex!, doc-azure-ai!]
+      - id: cl-05
+        title: Kubernetes
+        minutes: 90
+        level: intermediate
+        covers: ["19: Kubernetes"]
+        objectives:
+          - Deploy, expose and scale an app with Deployments, Services and HPA
+          - Manage config and secrets
+          - Schedule GPU workloads
+        resources: [yt-nana-k8s!, doc-k8s!]
+      - id: cl-06
+        title: CI/CD Pipelines with GitHub Actions
+        minutes: 60
+        level: beginner
+        covers: ["19: GitHub Actions", "19: CI/CD Pipelines"]
+        objectives:
+          - Build a pipeline that lints, tests, builds and pushes images
+          - Use environments, secrets and OIDC to cloud
+          - Implement blue/green or canary releases
+        resources: [doc-gh-actions!]
+      - id: cl-07
+        title: Infrastructure as Code with Terraform
+        minutes: 60
+        level: intermediate
+        covers: ["19: Terraform"]
+        objectives:
+          - Write Terraform for storage, compute and networking
+          - Manage state, modules and environments
+          - Review plans safely
+        resources: [doc-terraform!]
+      - id: cl-08
+        title: GPU Cloud Infrastructure, Deployment & Scaling
+        minutes: 60
+        level: advanced
+        covers: ["19: GPU Cloud Infrastructure", "19: Deployment & Scaling"]
+        objectives:
+          - Compare hyperscaler, specialised GPU clouds and serverless GPU
+          - Autoscale model servers on queue depth and latency
+          - Plan capacity and cost for an inference workload
+        resources: [book-ai-engineering!, doc-vllm]
+
+  - id: m25
+    title: AI Security & Responsible AI
+    summary: Threat-model AI systems, protect data, contain tools, and build systems that are fair, explainable and governed.
+    prerequisites: [m17]
+    lessons:
+      - id: sec-01
+        title: Prompt Injection & Jailbreak Attacks
+        minutes: 60
+        level: intermediate
+        covers: ["20: Prompt Injection", "20: Jailbreak Attacks"]
+        objectives:
+          - Execute and analyse direct, indirect and multi-turn attacks in a lab
+          - Explain automated adversarial-suffix jailbreaks
+          - Design defence-in-depth controls
+        resources: [doc-owasp-llm!, int-gandalf!, paper-indirect-injection, paper-adv-suffix]
+      - id: sec-02
+        title: Data Leakage, Sensitive Data & PII
+        minutes: 60
+        level: intermediate
+        covers: ["20: Data Leakage", "20: Sensitive Data Protection", "20: PII Detection & Redaction"]
+        objectives:
+          - Identify leakage paths (prompts, logs, training data, retrieval across tenants)
+          - Detect and redact PII before it reaches models and logs
+          - Apply data minimisation and retention policies
+        resources: [doc-owasp-llm!, doc-nist-ai-rmf]
+      - id: sec-03
+        title: Tool Execution Security & Sandboxed Execution
+        minutes: 60
+        level: advanced
+        covers: ["20: Tool Execution Security", "20: Sandboxed Execution"]
+        objectives:
+          - Apply least privilege and allow-lists to agent tools
+          - Run generated code in isolated sandboxes (containers, gVisor, Firecracker)
+          - Require confirmation for destructive actions
+        resources: [doc-owasp-llm!]
+      - id: sec-04
+        title: Model Supply Chain Security & Adversarial Attacks
+        minutes: 45
+        level: advanced
+        covers: ["20: Model Supply Chain Security", "20: Adversarial Attacks"]
+        objectives:
+          - Verify model provenance; avoid unsafe pickle weights (use safetensors)
+          - Explain data poisoning, evasion and model extraction attacks
+          - Pin and scan dependencies
+        resources: [doc-owasp-llm!, paper-adv-suffix]
+      - id: sec-05
+        title: Bias, Fairness & Explainability
+        minutes: 60
+        level: intermediate
+        covers: ["20: Bias & Fairness", "20: Explainability"]
+        objectives:
+          - Measure performance disparities across groups
+          - Apply mitigation at data, model and product levels
+          - Explain model behaviour with feature attribution and model cards
+        resources: [paper-model-cards!, paper-datasheets, doc-nist-ai-rmf]
+      - id: sec-06
+        title: AI Governance, Guardrails & Content Safety
+        minutes: 60
+        level: intermediate
+        covers: ["20: AI Governance", "20: Guardrails & Content Safety"]
+        objectives:
+          - Map a system to the NIST AI RMF functions and relevant regulation
+          - Implement input/output guardrails and content-safety classifiers
+          - Run red-team exercises and document risk decisions
+        resources: [doc-nist-ai-rmf!, paper-constitutional, doc-owasp-llm]
+
+  - id: m26
+    title: AI System Design & Architecture
+    summary: Design end-to-end AI systems under real constraints — scale, cost, latency, reliability.
+    prerequisites: [m21, m22, m23]
+    lessons:
+      - id: sd-01
+        title: Designing Scalable AI Applications & Trade-off Analysis
+        minutes: 75
+        level: advanced
+        covers: ["21: Designing Scalable AI Applications", "21: AI Tradeoff Analysis"]
+        objectives:
+          - Run a system-design process from requirements to architecture
+          - Quantify trade-offs between quality, latency, cost and complexity
+          - Write ADRs for key decisions
+        resources: [book-ai-engineering!, book-ddia!]
+      - id: sd-02
+        title: RAG System Design & Database/Vector Storage Design
+        minutes: 75
+        level: advanced
+        covers: ["21: RAG System Design", "21: Database & Vector Storage Design"]
+        objectives:
+          - Design a RAG system for millions of documents and many tenants
+          - Model relational, document and vector storage together
+          - Plan re-indexing and backfills
+        resources: [book-ai-engineering!, doc-qdrant]
+      - id: sd-03
+        title: Agent System Design & Model Routing Architecture
+        minutes: 60
+        level: advanced
+        covers: ["21: Agent System Design", "21: Model Routing Architecture"]
+        objectives:
+          - Design durable agent execution with queues and checkpoints
+          - Design a model gateway with routing, fallbacks and budgets
+          - Bound agent cost and latency
+        resources: [art-anthropic-agents!, book-ai-engineering]
+      - id: sd-04
+        title: Multi-Tenant AI Systems & Caching Strategies
+        minutes: 60
+        level: advanced
+        covers: ["21: Multi-Tenant AI Systems", "21: Caching Strategies"]
+        objectives:
+          - Isolate tenants' data, vectors, prompts and quotas
+          - Layer caches (prompt cache, response cache, semantic cache, embedding cache)
+          - Prevent cross-tenant leakage through caches
+        resources: [book-ai-engineering!, doc-redis]
+      - id: sd-05
+        title: Distributed Task Processing, Fault Tolerance & Reliability
+        minutes: 75
+        level: advanced
+        covers: ["21: Distributed Task Processing", "21: Fault Tolerance & Retries", "21: Reliability & Availability"]
+        objectives:
+          - Design job pipelines with retries, dead-letter queues and idempotency
+          - Use circuit breakers, timeouts and bulkheads
+          - Define SLOs and error budgets for an AI product
+        resources: [book-sre!, book-ddia]
+      - id: sd-06
+        title: Cost Optimisation, Latency Optimisation & Horizontal Scaling
+        minutes: 60
+        level: advanced
+        covers: ["21: Cost Optimization", "21: Latency Optimization", "21: Horizontal Scaling"]
+        objectives:
+          - Build a cost model per request and find the biggest levers
+          - Cut perceived and actual latency (streaming, parallelism, smaller models)
+          - Scale stateless and stateful components horizontally
+        resources: [book-ai-engineering!, book-ddia]

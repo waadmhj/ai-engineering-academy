@@ -1,0 +1,630 @@
+# Projects ladder: mini → module → capstone → portfolio (final).
+# Capstones inherit `defaults` (shared rubric, documentation and deliverables) defined in projects_defaults.yaml.
+# Architecture is expressed as layers (left → right) so the UI can draw it.
+
+# ───────────────────────── LEVEL 1 · MINI PROJECTS ─────────────────────────
+- id: proj-mini-py-utils
+  level: mini
+  module: m01
+  title: Text-Processing Toolkit (Python)
+  hours: 6
+  summary: A small, typed, tested Python package for streaming, cleaning and summarising large text/JSONL files.
+  requirements:
+    - Stream files line by line with generators (constant memory on a 1 GB file)
+    - CLI with argparse or Typer; commands `stats`, `clean`, `sample`
+    - Pydantic models for records; decorators for timing; a context manager for output files
+    - pytest suite with ≥ 90% coverage; packaged with pyproject.toml
+  decisions: ["Generator pipelines vs loading into memory — measure both", "Where validation errors should be raised vs collected"]
+- id: proj-mini-rest-api
+  level: mini
+  module: m02
+  title: Notes REST API
+  hours: 6
+  summary: A FastAPI CRUD service with validation, pagination, error handling and tests — your first real API.
+  requirements:
+    - Resource-oriented endpoints with correct status codes and pagination
+    - Pydantic request/response models; consistent error format
+    - Tests with FastAPI TestClient; OpenAPI docs reviewed
+    - Git history with small, meaningful commits and a PR-style README
+  decisions: ["Offset vs cursor pagination", "PUT vs PATCH semantics"]
+- id: proj-mini-sql-pipeline
+  level: mini
+  module: m04
+  title: Incremental SQL Data Pipeline
+  hours: 8
+  summary: Ingest a public dataset into PostgreSQL/SQLite incrementally, validate it, and expose analytical SQL views.
+  requirements:
+    - Idempotent incremental loads (re-running produces no duplicates)
+    - Validation step that quarantines bad rows with reasons
+    - Five analytical queries using joins, GROUP BY and window functions
+    - A data-quality report generated on every run
+  decisions: ["Upsert strategy", "Where to validate: before load, in-DB constraints, or both"]
+- id: proj-mini-classic-ml
+  level: mini
+  module: m06
+  title: Honest Classifier
+  hours: 6
+  summary: Train and evaluate a scikit-learn classifier with leakage-free splits, baselines and confidence intervals.
+  requirements:
+    - Majority-class and simple-heuristic baselines
+    - Cross-validated model selection; untouched test set
+    - Precision/recall/F1 with bootstrap confidence intervals
+    - A one-page model card
+  decisions: ["Which metric reflects the cost of errors", "How many folds and why"]
+- id: proj-mini-numpy-nn
+  level: mini
+  module: m07
+  title: Neural Network in Pure NumPy
+  hours: 8
+  summary: Implement an MLP with forward pass, backprop, SGD/Adam and train it on MNIST — no frameworks.
+  requirements:
+    - Layers, activations, softmax + cross-entropy implemented from scratch
+    - Gradient check against finite differences
+    - Training curves and ≥ 95% test accuracy on MNIST
+  decisions: ["Initialisation scheme", "Learning-rate schedule"]
+- id: proj-mini-attention
+  level: mini
+  module: m09
+  title: Attention from Scratch
+  hours: 5
+  summary: Implement scaled dot-product, causal and multi-head attention and verify against PyTorch.
+  requirements:
+    - NumPy implementation matching torch.nn.functional.scaled_dot_product_attention within 1e-5
+    - Visualise attention maps on a toy sequence task
+  decisions: ["Masking implementation", "Numerical stability of softmax"]
+- id: proj-mini-tiny-gpt
+  level: mini
+  module: m10
+  title: Tiny GPT on Your Own Corpus
+  hours: 10
+  summary: Train a character/BPE-level GPT on a small corpus and study how loss, context length and size interact.
+  requirements:
+    - BPE tokenizer trained on the corpus
+    - Decoder-only transformer trained with AdamW, warmup and cosine decay
+    - Ablation of context length and model width with plots
+  decisions: ["Tokenizer vocabulary size", "Compute budget allocation (Chinchilla-style)"]
+- id: proj-mini-semantic-search
+  level: mini
+  module: m14
+  title: Semantic Search Engine (No Vector DB)
+  hours: 8
+  summary: Build semantic search with sentence embeddings and NumPy, then compare against BM25 and hybrid.
+  requirements:
+    - Brute-force cosine search; recall@k and MRR on a labelled query set
+    - BM25 baseline and reciprocal-rank-fusion hybrid
+    - Latency measurements at 10k and 100k documents
+  decisions: ["Embedding model choice backed by your own eval", "When an ANN index becomes necessary"]
+
+# ───────────────────────── LEVEL 2 · MODULE PROJECTS ─────────────────────────
+- id: proj-module-pytorch-classifier
+  level: module
+  module: m08
+  title: Reproducible PyTorch Training Pipeline
+  hours: 12
+  summary: A configurable PyTorch training pipeline with DataLoaders, checkpoints, mixed precision and experiment logs.
+  requirements:
+    - Config-driven training (YAML) with seeds and deterministic options
+    - Resume from checkpoint exactly; save best/last
+    - GPU training on Colab with throughput measurements
+  decisions: ["Batch size vs learning rate", "Mixed precision impact on accuracy and speed"]
+- id: proj-module-llm-service
+  level: module
+  module: m12
+  title: Provider-Agnostic LLM Service (FastAPI)
+  hours: 14
+  summary: A FastAPI service that streams completions from multiple providers with structured outputs, retries, cost tracking and fallbacks.
+  requirements:
+    - One interface over OpenAI, Anthropic, Gemini and Ollama
+    - SSE streaming endpoint; structured-output endpoint validated with Pydantic
+    - Exponential backoff with jitter; per-request token and cost logging
+    - Fallback routing when a provider fails; integration tests with mocked providers
+  decisions: ["Routing policy (cost vs quality)", "What to log without leaking user data"]
+- id: proj-module-doc-search
+  level: module
+  module: m15
+  title: Document Search & QA Application
+  hours: 20
+  summary: Ingest a real document collection, compare chunking and retrieval strategies, and answer questions with citations.
+  requirements:
+    - Ingestion for PDF/HTML/Markdown with metadata
+    - At least three chunking strategies compared on a labelled set
+    - Dense, BM25 and hybrid retrieval compared; optional reranker
+    - Answers with inline citations; refusal when context is insufficient
+  decisions: ["Chunk size and overlap", "Hybrid fusion weights", "Whether reranking justifies its latency"]
+- id: proj-module-eval-harness
+  level: module
+  module: m16
+  title: LLM Evaluation Harness
+  hours: 14
+  summary: A reusable eval harness with golden datasets, deterministic and LLM-judge metrics, and CI regression gating.
+  requirements:
+    - Versioned golden dataset in JSONL
+    - Exact-match, rubric-based and LLM-as-judge metrics; judge calibrated against 50 human labels
+    - Confidence intervals and a regression report on every run
+    - GitHub Actions workflow failing on regressions
+  decisions: ["Judge model and rubric", "Regression thresholds"]
+- id: proj-module-research-agent
+  level: module
+  module: m17
+  title: Tool-Using Research Agent (from scratch)
+  hours: 16
+  summary: An agent built on raw API calls that searches, reads and writes cited reports, with budgets and human approval.
+  requirements:
+    - Agent loop with tool schemas, validation and error recovery
+    - Step and cost budgets; trace of every step
+    - Human approval before any write action
+    - Trajectory evaluation on 20 tasks
+  decisions: ["Workflow vs agent", "Memory strategy"]
+- id: proj-module-finetune
+  level: module
+  module: m19
+  title: Fine-Tune a Small Open-Weight Model
+  hours: 16
+  summary: QLoRA fine-tune of a small open model for a narrow task, compared honestly against prompting and RAG baselines.
+  requirements:
+    - Curated + synthetic dataset with dedup and contamination checks
+    - QLoRA training on a single GPU (Colab acceptable)
+    - Evaluation vs base model, few-shot prompting and RAG; regression checks on general ability
+  decisions: ["Fine-tune vs RAG for this task", "LoRA rank and target modules"]
+- id: proj-module-ai-backend
+  level: module
+  module: m21
+  title: Production AI Backend
+  hours: 16
+  summary: FastAPI + PostgreSQL + Redis backend with auth, rate limiting, background jobs and streaming.
+  requirements:
+    - JWT auth with roles; per-user rate limits
+    - Background ingestion jobs through a queue; idempotent workers
+    - Response cache in Redis; SSE streaming
+  decisions: ["Queue technology", "Cache invalidation strategy"]
+- id: proj-module-inference-bench
+  level: module
+  module: m22
+  title: Inference Benchmark Lab
+  hours: 10
+  summary: Benchmark an open model across serving engines and quantization levels; report latency, throughput, memory and quality.
+  requirements:
+    - Load generator measuring TTFT, TPOT and throughput at several concurrencies
+    - Compare at least two engines (e.g. vLLM vs Ollama) and two quantization levels
+    - Quality check so speed is never reported without accuracy
+  decisions: ["Which configuration you would ship, and why"]
+- id: proj-module-deploy
+  level: module
+  module: m24
+  title: Containerised Deployment with CI/CD and IaC
+  hours: 12
+  summary: Containerise an AI service, deploy it with Terraform, and ship via GitHub Actions with a canary.
+  requirements:
+    - Multi-stage Dockerfile; Compose for local
+    - Terraform for cloud resources
+    - GitHub Actions pipeline with tests, evals, build, deploy and rollback
+  decisions: ["ECS vs Kubernetes vs PaaS for this workload"]
+
+# ───────────────────────── LEVEL 3 · CAPSTONES ─────────────────────────
+- id: cap-research-assistant
+  level: capstone
+  title: AI-Powered Research Assistant
+  covers: ["22: AI-Powered Research Assistant"]
+  hours: 60
+  prerequisites: [m15, m16, m17]
+  summary: Answers research questions over papers and the web with verifiable citations and structured literature reviews.
+  spec:
+    problem: Researchers spend hours finding, reading and synthesising papers; generic chatbots fabricate citations.
+    business: ["Cut literature-review time by 50%", "Zero fabricated citations in shipped answers", "Usable by non-engineers"]
+    functional: ["Search arXiv / Semantic Scholar APIs and a private PDF library", "Read and chunk full papers", "Answer questions with claim-level citations", "Generate structured literature reviews (themes, methods, gaps)", "Save projects and export to Markdown/BibTeX"]
+    nonfunctional: ["p95 answer latency < 20 s; streaming first token < 2 s", "Every claim links to a passage", "Cost < $0.10 per question at target usage"]
+    architecture:
+      - [Web UI, API Gateway]
+      - [Research Orchestrator, Paper Search Tools]
+      - [Ingestion Workers, Hybrid Retriever + Reranker]
+      - [PostgreSQL, Vector Index, Object Storage]
+      - [LLM Gateway, Eval & Tracing]
+    tech:
+      - { choice: "FastAPI + Next.js", why: "Typed API, streaming UI" }
+      - { choice: "PostgreSQL + pgvector or Qdrant", why: "Compare both; pick on recall/latency at your scale" }
+      - { choice: "Cross-encoder reranker", why: "Precision matters more than latency for research" }
+    database: ["projects(id, owner, title)", "papers(id, source, doi, title, authors, year, pdf_uri)", "chunks(id, paper_id, section, text, embedding)", "answers(id, project_id, question, answer, citations jsonb, trace_id)"]
+    milestones:
+      - { title: "Ingestion & search", deliverables: ["arXiv + PDF ingestion", "Section-aware chunking", "Hybrid retrieval with eval set of 50 questions"] }
+      - { title: "Cited answering", deliverables: ["Claim-level citations", "Refusal when unsupported", "Faithfulness eval ≥ 0.9"] }
+      - { title: "Literature reviews", deliverables: ["Multi-step agent producing structured reviews", "Human evaluation with 3 reviewers"] }
+      - { title: "Production", deliverables: ["Auth, quotas, tracing, cost dashboard", "Deployed demo"] }
+    decisions: ["Chunking by section vs fixed size for papers", "Reranker vs no reranker (latency/precision)", "Agentic multi-step vs single retrieval", "Citation verification method"]
+    testing: ["Unit tests for parsers and citation formatter", "Golden set of 100 Q&A with source passages", "Regression gate on faithfulness and citation precision"]
+    security: ["Indirect prompt injection from fetched pages", "Per-user library isolation", "Licence compliance for PDFs"]
+    evaluation: ["Retrieval recall@10, MRR", "Faithfulness & citation precision", "Human preference vs baseline chatbot"]
+    deployment: ["Containerised services", "Background workers autoscaled on queue depth"]
+    monitoring: ["Traces per question", "Citation-failure alerts", "Cost per question"]
+    cost: ["Embedding cost per paper", "Cache answers per project", "Route simple questions to a small model"]
+
+- id: cap-doc-intelligence
+  level: capstone
+  title: Multimodal Document Intelligence Platform
+  covers: ["22: Document Intelligence Platform"]
+  hours: 60
+  prerequisites: [m15, m20]
+  summary: Extracts structured data from invoices, contracts and forms (scanned or digital) with confidence scores and human review.
+  spec:
+    problem: Operations teams re-key data from documents by hand; templates break on new layouts.
+    business: ["Automate ≥ 80% of fields with ≥ 98% field accuracy", "Human review only for low-confidence fields", "Audit trail for every extracted value"]
+    functional: ["Upload PDFs/images; classify document type", "OCR + layout analysis + VLM extraction to a typed schema", "Confidence per field; review queue UI", "Document Q&A over the corpus", "Export to JSON/CSV/webhooks"]
+    nonfunctional: ["Process 1,000 pages/hour", "PII encrypted at rest", "Reproducible extraction per model version"]
+    architecture:
+      - [Upload UI, Review UI]
+      - [API, Job Queue]
+      - [Classifier, OCR / Layout, VLM Extractor, Validator]
+      - [PostgreSQL, Object Storage, Vector Index]
+    tech:
+      - { choice: "OCR engine vs VLM-only vs hybrid", why: "Benchmark all three on your documents" }
+      - { choice: "Pydantic schemas per doc type", why: "Typed extraction and validation" }
+    database: ["documents(id, type, status, uri, pages)", "fields(id, document_id, name, value, confidence, source_bbox, reviewed_by)", "schemas(id, doc_type, version, json_schema)"]
+    milestones:
+      - { title: "Pipeline", deliverables: ["Classification + OCR + extraction for 2 doc types", "Field-level accuracy eval on 100 docs"] }
+      - { title: "Confidence & review", deliverables: ["Calibrated confidence", "Review UI with bounding-box highlights"] }
+      - { title: "Scale & Q&A", deliverables: ["Queue-based workers", "Multimodal RAG over documents"] }
+    decisions: ["OCR+LLM vs VLM end-to-end", "Confidence calibration method", "Threshold for human review (cost vs accuracy)"]
+    testing: ["Golden documents per type", "Adversarial layouts (rotated, low-res, handwritten)"]
+    security: ["PII redaction in logs", "Tenant isolation", "Retention policies"]
+    evaluation: ["Field-level precision/recall", "Straight-through-processing rate", "Reviewer time saved"]
+    deployment: ["GPU worker pool for OCR/VLM", "Autoscaling on queue"]
+    monitoring: ["Accuracy drift by doc type", "Queue latency", "Cost per page"]
+    cost: ["Cheap classifier first", "VLM only on hard pages", "Batch processing"]
+
+- id: cap-production-rag
+  level: capstone
+  title: Production-Ready RAG System
+  covers: ["22: Production-Ready RAG System"]
+  hours: 70
+  prerequisites: [m15, m16, m21]
+  summary: A RAG platform engineered by comparing chunking, retrieval, embedding models and rerankers with a rigorous eval suite.
+  spec:
+    problem: Most RAG systems are tuned by intuition and degrade silently; the business cannot trust the answers.
+    business: ["Answer ≥ 85% of in-scope questions correctly with citations", "Refuse out-of-scope questions", "Measurable improvements per release"]
+    functional: ["Incremental ingestion of a real corpus (≥ 5k documents)", "Configurable pipeline: chunker, embedder, retriever, reranker, generator", "Experiment runner comparing configurations", "Chat UI with citations and feedback", "Admin dashboard: evals, traces, costs"]
+    nonfunctional: ["p95 latency < 4 s", "Re-index without downtime", "Every answer traceable to retrieved chunks"]
+    architecture:
+      - [Chat UI, Admin UI]
+      - [API Gateway, Query Pipeline]
+      - [Query Rewriter, Hybrid Retriever, Reranker, Generator]
+      - [Ingestion Workers, Vector DB, PostgreSQL, Cache]
+      - [Eval Runner, Tracing]
+    tech:
+      - { choice: "Compare ≥ 3 chunkers, ≥ 2 embedding models, BM25/dense/hybrid, ± reranker", why: "Decisions must be made from eval results" }
+      - { choice: "Qdrant or pgvector", why: "Justify with benchmark at your corpus size" }
+    database: ["sources, documents, chunks(versioned by index_version)", "experiments(id, config jsonb, metrics jsonb)", "feedback(answer_id, rating, comment)"]
+    milestones:
+      - { title: "Baseline + eval set", deliverables: ["200-question golden set with source passages", "Naive RAG baseline measured"] }
+      - { title: "Retrieval experiments", deliverables: ["Chunking, embedding and hybrid ablations", "Results table + chosen configuration ADR"] }
+      - { title: "Generation quality", deliverables: ["Reranking, contextual retrieval, citation and refusal behaviour", "Faithfulness ≥ 0.9"] }
+      - { title: "Production", deliverables: ["Blue/green re-indexing", "CI eval gate", "Tracing, feedback loop, cost dashboard"] }
+    decisions: ["Chunking strategy", "Embedding model", "Hybrid fusion", "Reranker trade-off", "Query transformation", "Context ordering"]
+    testing: ["Unit tests per component", "Retrieval and end-to-end eval suites", "Load test at 20 RPS"]
+    security: ["Indirect prompt injection in documents", "Document-level access control at retrieval time"]
+    evaluation: ["recall@k, MRR, nDCG", "Faithfulness, answer relevance, context precision", "Online thumbs-up rate"]
+    deployment: ["Stateless API replicas", "Separate ingestion workers", "Versioned indexes"]
+    monitoring: ["Retrieval-empty rate", "Low-faithfulness alerts", "Latency per stage"]
+    cost: ["Embedding cache", "Semantic response cache", "Small-model routing"]
+
+- id: cap-multi-agent-research
+  level: capstone
+  title: Multi-Agent Research System
+  covers: ["22: Multi-Agent Research System"]
+  hours: 60
+  prerequisites: [m17, m18]
+  summary: An orchestrator–worker system that plans research, runs parallel sub-agents and synthesises reports — justified against a single-agent baseline.
+  spec:
+    problem: Broad research questions need parallel exploration that a single context window cannot hold.
+    business: ["Better report quality than a single agent at ≤ 2× cost", "Transparent reasoning trail"]
+    functional: ["Planner decomposes questions", "Parallel worker agents with search/read tools", "Shared memory of findings", "Synthesiser with citations", "Human checkpoint to approve the plan"]
+    nonfunctional: ["Bounded cost and steps per run", "Resumable after failure", "Full trace of every agent"]
+    architecture:
+      - [UI, API]
+      - [Orchestrator / Planner]
+      - [Worker Agent ×N, Tool Sandbox]
+      - [Findings Store, Checkpoint Store, Tracing]
+    tech:
+      - { choice: "Plain code vs LangGraph", why: "Build v1 by hand, then decide with an ADR" }
+    database: ["runs(id, question, plan, status, cost)", "tasks(id, run_id, agent, state)", "findings(id, task_id, claim, source)"]
+    milestones:
+      - { title: "Single-agent baseline", deliverables: ["Baseline + 30-task eval"] }
+      - { title: "Orchestrator-worker", deliverables: ["Parallel workers", "Shared findings memory"] }
+      - { title: "Reliability", deliverables: ["Checkpoints, budgets, HITL", "Trajectory eval"] }
+    decisions: ["How to split tasks", "Memory sharing strategy", "When multi-agent is not worth it"]
+    testing: ["Simulated tools for deterministic tests", "Fault injection"]
+    security: ["Tool allow-lists", "Injection from fetched content"]
+    evaluation: ["Report quality (rubric + human)", "Cost and latency vs baseline"]
+    deployment: ["Durable job execution with queue"]
+    monitoring: ["Per-agent cost", "Loop detection"]
+    cost: ["Small models for workers", "Caching tool results"]
+
+- id: cap-support-agent
+  level: capstone
+  title: AI Customer Support Agent
+  covers: ["22: AI Customer Support Agent"]
+  hours: 60
+  prerequisites: [m15, m17, m25]
+  summary: A support agent that resolves tickets using a knowledge base and account tools, escalating safely to humans.
+  spec:
+    problem: Support teams answer the same questions repeatedly; naive bots frustrate customers and take unsafe actions.
+    business: ["Resolve ≥ 40% of tickets without humans", "CSAT ≥ human baseline", "Zero unauthorised account actions"]
+    functional: ["Grounded answers from help-centre content", "Tools: order lookup, refund request (approval-gated), ticket creation", "Escalation with conversation summary", "Multi-turn memory per customer"]
+    nonfunctional: ["p95 first token < 1.5 s", "PII redaction in logs", "Policy compliance"]
+    architecture:
+      - [Chat Widget, Agent Console]
+      - [Conversation API]
+      - [Agent, Policy Guardrails, Tools]
+      - [Knowledge Index, CRM/Orders (mock), PostgreSQL]
+    tech:
+      - { choice: "Tool calling with typed schemas", why: "Validated, auditable actions" }
+    database: ["conversations, messages, tool_calls(audit), escalations"]
+    milestones:
+      - { title: "Grounded FAQ", deliverables: ["KB RAG with eval"] }
+      - { title: "Tools & policies", deliverables: ["Approval-gated actions", "Guardrails"] }
+      - { title: "Escalation & analytics", deliverables: ["Handoff", "Resolution dashboard"] }
+    decisions: ["What the agent may do autonomously", "Escalation triggers"]
+    testing: ["Simulated customers (incl. adversarial)", "Policy test suite"]
+    security: ["Prompt injection", "Account takeover via social engineering", "PII"]
+    evaluation: ["Resolution rate", "Policy violations", "CSAT proxy"]
+    deployment: ["Widget + API", "Feature flags"]
+    monitoring: ["Escalation rate", "Tool error rate"]
+    cost: ["Cache common answers", "Route by intent"]
+
+- id: cap-coding-assistant
+  level: capstone
+  title: AI Coding Assistant
+  covers: ["22: AI Coding Assistant"]
+  hours: 60
+  prerequisites: [m17, m25]
+  summary: A repository-aware assistant that explains code, proposes changes and runs tests in a sandbox.
+  spec:
+    problem: Developers lose time understanding unfamiliar codebases; LLMs without repo context hallucinate APIs.
+    business: ["Measurable task success on a benchmark of real issues", "Never executes outside the sandbox"]
+    functional: ["Index a repo (AST-aware chunking, symbol graph)", "Answer questions with file/line references", "Propose diffs; run tests in sandbox; iterate on failures", "Review mode for pull requests"]
+    nonfunctional: ["Sandboxed execution with resource limits", "Works on repos up to 100k LOC"]
+    architecture:
+      - [CLI / Web UI]
+      - [Agent Orchestrator]
+      - [Code Retriever, Edit Tool, Sandbox Runner]
+      - [Code Index, Symbol Graph]
+    tech:
+      - { choice: "Tree-sitter parsing", why: "Structure-aware chunks" }
+      - { choice: "Container sandbox", why: "Isolation for generated code" }
+    database: ["repos, files, symbols, chunks, sessions, edits"]
+    milestones:
+      - { title: "Repo Q&A", deliverables: ["AST chunking", "Retrieval eval"] }
+      - { title: "Edit loop", deliverables: ["Diff proposals", "Sandbox tests"] }
+      - { title: "Benchmark", deliverables: ["20-issue benchmark with success rate"] }
+    decisions: ["Retrieval vs long context", "Edit format (diff vs full file)"]
+    testing: ["Benchmark of real issues", "Sandbox escape tests"]
+    security: ["Sandbox isolation", "Secret scanning", "No network in sandbox"]
+    evaluation: ["Task success", "Test pass rate", "Human review"]
+    deployment: ["CLI + server"]
+    monitoring: ["Tokens per task", "Sandbox failures"]
+    cost: ["Context pruning", "Model routing"]
+
+- id: cap-multimodal-assistant
+  level: capstone
+  title: Multimodal AI Assistant
+  covers: ["22: Multimodal AI Assistant"]
+  hours: 50
+  prerequisites: [m20, m21]
+  summary: A voice-and-vision assistant that sees images, listens and speaks, with low latency.
+  spec:
+    problem: Users want to ask about what they see and hear naturally; latency and modality hand-offs make this hard.
+    business: ["Conversational latency < 1.5 s to first audio", "Accurate image understanding on target tasks"]
+    functional: ["Speech-to-text → LLM/VLM → text-to-speech loop", "Image upload / camera frames", "Multimodal memory of the session"]
+    nonfunctional: ["Streaming everywhere", "Graceful degradation per modality"]
+    architecture:
+      - [Web/Mobile Client]
+      - [WebSocket Gateway]
+      - [STT, VLM/LLM, TTS]
+      - [Session Store]
+    tech:
+      - { choice: "Cascaded STT→LLM→TTS vs native speech model", why: "Compare latency and quality" }
+    database: ["sessions, turns, media"]
+    milestones:
+      - { title: "Voice loop", deliverables: ["Streaming STT/TTS"] }
+      - { title: "Vision", deliverables: ["Image QA eval"] }
+      - { title: "Latency", deliverables: ["Latency budget per stage"] }
+    decisions: ["Cascaded vs end-to-end", "Barge-in handling"]
+    testing: ["WER eval", "Latency tests"]
+    security: ["Media retention", "Consent"]
+    evaluation: ["Task success", "Latency percentiles"]
+    deployment: ["WebSocket service"]
+    monitoring: ["Per-stage latency"]
+    cost: ["Media tokens", "Caching"]
+
+- id: cap-meeting-intelligence
+  level: capstone
+  title: AI Meeting Intelligence System
+  covers: ["22: AI Meeting Intelligence System"]
+  hours: 50
+  prerequisites: [m20, m15]
+  summary: Transcribes meetings, attributes speakers, extracts decisions/action items, and answers questions across meetings.
+  spec:
+    problem: Decisions and action items get lost; nobody re-watches recordings.
+    business: ["Action-item extraction F1 ≥ 0.8", "Search across all meetings"]
+    functional: ["Upload/record audio", "Transcription with diarisation", "Summaries, decisions, action items with owners", "Cross-meeting Q&A with timestamps"]
+    nonfunctional: ["Process 1h audio in < 5 min", "Privacy and consent controls"]
+    architecture:
+      - [Web UI]
+      - [API, Job Queue]
+      - [STT + Diarisation, Extractor, Indexer]
+      - [PostgreSQL, Vector Index, Object Storage]
+    tech:
+      - { choice: "Whisper-family STT", why: "Open, accurate; compare hosted APIs" }
+    database: ["meetings, segments(speaker, start, end, text), actions(owner, due, status)"]
+    milestones:
+      - { title: "Transcription", deliverables: ["WER and diarisation error measured"] }
+      - { title: "Extraction", deliverables: ["Action items eval"] }
+      - { title: "Search", deliverables: ["Timestamped Q&A"] }
+    decisions: ["Chunking transcripts by speaker turn vs time", "Summary granularity"]
+    testing: ["Labelled meetings set"]
+    security: ["Consent", "Access control per meeting"]
+    evaluation: ["WER, DER, extraction F1"]
+    deployment: ["GPU workers for STT"]
+    monitoring: ["Processing time", "Failure rate"]
+    cost: ["Batch transcription", "Small models for extraction"]
+
+- id: cap-enterprise-knowledge
+  level: capstone
+  title: Enterprise Knowledge Assistant
+  covers: ["22: Enterprise Knowledge Assistant"]
+  hours: 70
+  prerequisites: [m15, m21, m25, m26]
+  summary: A multi-tenant assistant over company knowledge (docs, wikis, tickets) that respects permissions.
+  spec:
+    problem: Knowledge is scattered across tools; employees cannot find answers and must not see documents they lack access to.
+    business: ["Permission-correct answers 100% of the time", "Adoption across 3 departments", "SSO and audit"]
+    functional: ["Connectors (filesystem, wiki export, tickets)", "ACL-aware retrieval", "Chat with citations; admin console", "Usage and gap analytics"]
+    nonfunctional: ["Multi-tenant isolation", "Audit logs", "SSO (OIDC)"]
+    architecture:
+      - [Chat UI, Admin Console]
+      - [API Gateway + Auth]
+      - [Connector Workers, ACL Service, RAG Pipeline]
+      - [PostgreSQL, Vector DB (per-tenant), Cache]
+    tech:
+      - { choice: "Per-tenant collections vs shared index with filters", why: "Benchmark isolation vs cost" }
+    database: ["tenants, users, groups, documents(acl), chunks(tenant_id, acl)", "audit_log"]
+    milestones:
+      - { title: "Connectors + ACL", deliverables: ["Permission-aware ingestion"] }
+      - { title: "Retrieval with ACL", deliverables: ["Permission leakage tests"] }
+      - { title: "Enterprise", deliverables: ["SSO, audit, analytics"] }
+    decisions: ["Tenant isolation model", "ACL enforcement point"]
+    testing: ["Permission leakage test suite", "Load tests"]
+    security: ["Cross-tenant leakage", "Prompt injection in docs", "Audit"]
+    evaluation: ["Answer quality per department", "Leakage = 0"]
+    deployment: ["Kubernetes or ECS", "Terraform"]
+    monitoring: ["Per-tenant usage and cost"]
+    cost: ["Tiered models", "Caching per tenant"]
+
+- id: cap-workflow-automation
+  level: capstone
+  title: AI Workflow Automation Platform
+  covers: ["22: AI Workflow Automation Platform"]
+  hours: 60
+  prerequisites: [m17, m18, m21]
+  summary: Users define multi-step workflows mixing LLM steps, tools and approvals; the platform runs them durably.
+  spec:
+    problem: Business processes mix judgment and routine steps; scripts are brittle and agents are unpredictable.
+    business: ["Reliable execution with retries and audit", "Non-engineers can define workflows"]
+    functional: ["Workflow definition (YAML/visual)", "Step types: LLM, tool/API, condition, human approval", "Durable execution with retries and resume", "Run history and replay"]
+    nonfunctional: ["Exactly-once side effects (idempotency)", "Horizontal scaling of workers"]
+    architecture:
+      - [Workflow Builder UI]
+      - [API, Scheduler]
+      - [Execution Engine, Worker Pool, Approval Service]
+      - [PostgreSQL (state), Queue, Secrets Vault]
+    tech:
+      - { choice: "Build a state machine vs Temporal/Prefect", why: "ADR required" }
+    database: ["workflows(version), runs, steps(state, attempts), approvals"]
+    milestones:
+      - { title: "Engine", deliverables: ["Durable state machine"] }
+      - { title: "Step types", deliverables: ["LLM + tool + approval steps"] }
+      - { title: "Ops", deliverables: ["Replay, metrics, alerts"] }
+    decisions: ["Orchestrator choice", "Idempotency strategy"]
+    testing: ["Fault injection", "Replay tests"]
+    security: ["Secrets handling", "Tool permissions"]
+    evaluation: ["Success rate", "MTTR"]
+    deployment: ["Workers autoscaled"]
+    monitoring: ["Step latency", "Failures by type"]
+    cost: ["Per-workflow cost limits"]
+
+- id: cap-finetune-pipeline
+  level: capstone
+  title: Custom LLM Fine-Tuning Pipeline
+  covers: ["22: Custom LLM Fine-Tuning Pipeline"]
+  hours: 60
+  prerequisites: [m19, m23]
+  summary: An end-to-end, reproducible pipeline — data, SFT/DPO, evaluation, registry and serving — for a domain model.
+  spec:
+    problem: Teams fine-tune ad hoc and cannot reproduce, compare or safely deploy models.
+    business: ["Beat the best prompted baseline on the target task", "Reproducible from a single config"]
+    functional: ["Data pipeline with versioning (DVC)", "SFT + optional DPO training", "Eval suite incl. regressions", "Model registry + serving with vLLM", "Report generation"]
+    nonfunctional: ["Runs on a single GPU", "Every artifact versioned"]
+    architecture:
+      - [Config]
+      - [Data Pipeline, Training Job, Eval Job]
+      - [Model Registry, Experiment Tracker]
+      - [Serving (vLLM)]
+    tech:
+      - { choice: "TRL + PEFT + MLflow + DVC", why: "Standard open stack" }
+    database: ["datasets(version), runs(params, metrics), models(stage)"]
+    milestones:
+      - { title: "Data", deliverables: ["Versioned dataset with datasheet"] }
+      - { title: "Training", deliverables: ["QLoRA SFT, tracked runs"] }
+      - { title: "Eval & serve", deliverables: ["Eval gate, served adapter"] }
+    decisions: ["SFT only vs SFT+DPO", "Rank/alpha", "Merge adapter or serve separately"]
+    testing: ["Data tests", "Eval regression"]
+    security: ["Training-data PII", "Model licence"]
+    evaluation: ["Task metric with CIs", "General ability regression"]
+    deployment: ["vLLM with LoRA adapters"]
+    monitoring: ["Drift", "Quality sampling"]
+    cost: ["GPU hours per run", "Spot instances"]
+
+- id: cap-eval-platform
+  level: capstone
+  title: AI Model Evaluation Platform
+  covers: ["22: AI Model Evaluation Platform"]
+  hours: 60
+  prerequisites: [m16, m23]
+  summary: A platform to define eval suites, run them across models/prompts, compare results with statistics, and gate releases.
+  spec:
+    problem: Teams compare models by vibes; regressions reach production.
+    business: ["Every release has an eval report", "Statistically sound comparisons"]
+    functional: ["Dataset management (versioned)", "Metric library: exact, rubric, judge, RAG metrics", "Run matrix across models and prompts", "Comparison UI with confidence intervals and per-example diffs", "CI integration"]
+    nonfunctional: ["Parallel, resumable runs", "Reproducible results"]
+    architecture:
+      - [Web UI, CLI / CI]
+      - [API]
+      - [Run Orchestrator, Metric Workers, Judge Service]
+      - [PostgreSQL, Object Storage]
+    tech:
+      - { choice: "Your own engine vs wrapping existing libs", why: "ADR" }
+    database: ["datasets, examples, suites, runs, results(example_id, metric, score)"]
+    milestones:
+      - { title: "Core", deliverables: ["Datasets + runs + metrics"] }
+      - { title: "Comparison", deliverables: ["CIs, diffs, judge calibration"] }
+      - { title: "CI", deliverables: ["GitHub Action and badges"] }
+    decisions: ["Judge calibration method", "Significance testing approach"]
+    testing: ["Metric correctness tests"]
+    security: ["Dataset access control"]
+    evaluation: ["Agreement with human labels"]
+    deployment: ["Worker pool"]
+    monitoring: ["Run failures", "Judge cost"]
+    cost: ["Cache model outputs", "Sampling strategies"]
+
+- id: cap-ai-saas
+  level: portfolio
+  title: End-to-End Production AI SaaS (Final Portfolio Project)
+  covers: ["22: End-to-End Production AI SaaS"]
+  hours: 120
+  prerequisites: [m24, m25, m26]
+  summary: Your own AI product, built to production standards — multi-tenant, evaluated, observable, secure, deployed and documented.
+  spec:
+    problem: Choose a real problem for a real user group and validate it with at least five potential users.
+    business: ["Clear value proposition and success metrics", "Pricing and unit economics", "Onboarding that works without you"]
+    functional: ["Authentication, organisations and roles", "Core AI feature(s) built on RAG and/or agents", "Billing-ready usage metering", "Admin dashboard"]
+    nonfunctional: ["99.5% availability target with SLOs", "p95 latency targets per endpoint", "Security review completed", "GDPR-style data handling"]
+    architecture:
+      - [Web App, Public API]
+      - [Gateway + Auth, Rate Limiter]
+      - [Core Services, AI Orchestrator, Workers]
+      - [PostgreSQL, Vector DB, Redis, Object Storage]
+      - [LLM Gateway, Tracing, Eval Pipeline, Billing Metering]
+    tech:
+      - { choice: "Your decisions, each with an ADR", why: "This is the point of the capstone" }
+    database: ["tenants, users, memberships, usage_events, domain tables"]
+    milestones:
+      - { title: "Discovery", deliverables: ["Problem interviews", "Requirements doc"] }
+      - { title: "Architecture", deliverables: ["Design doc + ADRs", "Threat model"] }
+      - { title: "MVP", deliverables: ["Core feature with eval suite"] }
+      - { title: "Production", deliverables: ["CI/CD, IaC, monitoring, SLOs"] }
+      - { title: "Launch", deliverables: ["Public demo, docs, launch article"] }
+    decisions: ["Everything — documented as ADRs"]
+    testing: ["Unit, integration, e2e, eval, load, security tests"]
+    security: ["Threat model (STRIDE + OWASP LLM)", "Pen-test checklist"]
+    evaluation: ["Offline eval suite + online metrics"]
+    deployment: ["IaC, CI/CD, staging + production"]
+    monitoring: ["Dashboards, alerts, on-call runbook"]
+    cost: ["Unit economics per user/month"]

@@ -1,0 +1,435 @@
+# Stage 1 — Engineering Foundations
+# Lesson shorthand:
+#   covers:    roadmap topics as "<domain#>: <topic>" exactly as written in content.md
+#   resources: resource ids; a trailing "!" marks a REQUIRED resource, otherwise supplementary
+#   workshop:  a Tutor Forge part practised in this lesson (see content/forge.yaml)
+id: s1
+order: 1
+title: Engineering Foundations
+summary: >-
+  The engineering base every AI engineer stands on: idiomatic Python, the professional toolchain,
+  numerical computing, data wrangling, SQL, and the mathematics and core ideas of machine learning.
+modules:
+  - id: m01
+    title: Python for AI Engineering
+    summary: Idiomatic, production-grade Python — the language of the entire AI stack.
+    prerequisites: []
+    project: proj-mini-py-utils
+    lessons:
+      - id: py-01
+        title: Variables, Data Types & the Python Object Model
+        minutes: 75
+        level: beginner
+        covers: ["1: Variables & Data Types"]
+        objectives:
+          - Explain names, objects and references, and predict aliasing behaviour
+          - Choose the right built-in type (int, float, str, bytes, list, tuple, dict, set) for a job
+          - Distinguish mutable from immutable types and explain why it matters for bugs and hashing
+        resources: [doc-python-datamodel!, doc-python-tutorial!, book-fluent-python, course-cs50p]
+      - id: py-02
+        title: Functions, Scope & Modules
+        minutes: 60
+        level: beginner
+        covers: ["1: Functions & Modules"]
+        objectives:
+          - Write functions with positional, keyword, default, *args and **kwargs parameters
+          - Explain LEGB scope and closures
+          - Organise code into modules and packages and understand the import system
+        resources: [doc-python-tutorial!, book-fluent-python, course-cs50p]
+      - id: py-03
+        title: Classes, OOP & Exception Handling
+        minutes: 75
+        level: beginner
+        covers: ["1: OOP & Exception Handling"]
+        objectives:
+          - Model a domain with classes, composition and (sparingly) inheritance
+          - Implement dunder methods (__repr__, __eq__, __len__) and dataclasses
+          - Design an exception hierarchy and handle errors at the right layer
+        resources: [doc-python-tutorial!, book-fluent-python]
+      - id: py-04
+        title: Comprehensions, Iterators & Generators
+        minutes: 60
+        level: beginner
+        covers: ["1: List & Dictionary Comprehensions", "1: Iterators & Generators"]
+        objectives:
+          - Write readable list/dict/set comprehensions and know when a loop is clearer
+          - Explain the iterator protocol (__iter__/__next__) and lazy evaluation
+          - Stream large files with generators in constant memory
+        resources: [yt-corey-generators!, book-fluent-python]
+        workshop: forge-1
+      - id: py-05
+        title: Decorators & Context Managers
+        minutes: 60
+        level: intermediate
+        covers: ["1: Decorators & Context Managers"]
+        objectives:
+          - Build decorators from closures, including decorators with arguments and functools.wraps
+          - Implement context managers with classes and contextlib
+          - Apply both to real concerns — timing, retries, caching, resource cleanup
+        resources: [yt-corey-decorators!, yt-corey-context!, book-fluent-python]
+      - id: py-06
+        title: Concurrency & asyncio
+        minutes: 90
+        level: intermediate
+        covers: ["1: Asyncio & Concurrency"]
+        objectives:
+          - Distinguish concurrency from parallelism; threads, processes and coroutines; the GIL
+          - Write async code with async/await, tasks, gather and timeouts
+          - Make many I/O-bound calls (e.g. LLM API requests) concurrently with bounded concurrency
+        resources: [doc-python-asyncio!, book-fluent-python]
+      - id: py-07
+        title: Type Hints & Pydantic
+        minutes: 60
+        level: intermediate
+        covers: ["1: Type Hints & Pydantic"]
+        objectives:
+          - Annotate code with generics, Optional/Union, TypedDict, Protocol and Literal
+          - Validate untrusted data with Pydantic models, validators and settings
+          - Explain why typed schemas are the backbone of structured LLM outputs and FastAPI
+        resources: [doc-pydantic!, doc-python-typing]
+      - id: py-08
+        title: Virtual Environments, Packaging & Project Layout
+        minutes: 45
+        level: beginner
+        covers: ["1: Virtual Environments & Packaging"]
+        objectives:
+          - Create reproducible environments with venv (and know when to use uv/conda)
+          - Write a pyproject.toml, pin dependencies and build an installable package
+          - Lay out a project with src/, tests/ and configuration via environment variables
+        resources: [yt-corey-venv!, doc-packaging!]
+
+  - id: m02
+    title: The Engineering Toolkit
+    summary: Algorithms, the shell, Git, HTTP, REST and serialization — the daily tools of a professional engineer.
+    prerequisites: [m01]
+    project: proj-mini-rest-api
+    lessons:
+      - id: tk-01
+        title: Data Structures & Algorithms for Engineers
+        minutes: 120
+        level: intermediate
+        covers: ["1: Data Structures & Algorithms"]
+        objectives:
+          - Reason about time and space complexity with Big-O
+          - Use arrays, hash maps, heaps, stacks, queues, trees and graphs appropriately
+          - Implement binary search, BFS/DFS, top-k with a heap and two-pointer techniques
+        resources: [book-pythonds!, course-cs50p]
+      - id: tk-02
+        title: Linux & the Command Line
+        minutes: 75
+        level: beginner
+        covers: ["1: Linux & Command Line"]
+        objectives:
+          - Navigate the filesystem, manage permissions and processes
+          - Compose pipelines with grep, sed, awk, sort, uniq, xargs
+          - Write small, safe shell scripts and inspect logs on a remote server over SSH
+        resources: [yt-missing-semester-shell!, course-missing-semester, book-tlcl]
+      - id: tk-03
+        title: Git & GitHub Workflows
+        minutes: 75
+        level: beginner
+        covers: ["1: Git & GitHub"]
+        objectives:
+          - Explain commits, the index and branches as a DAG of snapshots
+          - Branch, merge, rebase and resolve conflicts confidently
+          - Collaborate with pull requests, code review and protected branches
+        resources: [yt-corey-git!, int-learngitbranching!, book-pro-git]
+      - id: tk-04
+        title: HTTP & Networking Fundamentals
+        minutes: 60
+        level: beginner
+        covers: ["1: HTTP & Networking Fundamentals"]
+        objectives:
+          - Trace a request through DNS, TCP, TLS and HTTP
+          - Use methods, status codes, headers, cookies and caching correctly
+          - Debug network calls with curl and browser dev tools
+        resources: [doc-mdn-http!]
+      - id: tk-05
+        title: REST APIs — Design and Consumption
+        minutes: 75
+        level: beginner
+        covers: ["1: REST APIs"]
+        objectives:
+          - Design resource-oriented endpoints with correct verbs, status codes and pagination
+          - Consume APIs robustly with timeouts, retries and authentication
+          - Build a first FastAPI service with request validation
+        resources: [doc-fastapi!, doc-mdn-http]
+      - id: tk-06
+        title: "Serialization: JSON, YAML & Friends"
+        minutes: 45
+        level: beginner
+        covers: ["1: JSON, YAML & Serialization"]
+        objectives:
+          - Serialise and parse JSON and YAML safely (never yaml.load on untrusted input)
+          - Compare JSON, YAML, MessagePack, Protocol Buffers and pickle on safety and speed
+          - Map nested JSON to typed Pydantic models
+        resources: [doc-python-tutorial, doc-pydantic]
+
+  - id: m03
+    title: Numerical Python & Data Wrangling
+    summary: NumPy and pandas, cleaning, transforming and exploring real data, and the file formats AI systems run on.
+    prerequisites: [m01]
+    lessons:
+      - id: da-01
+        title: "NumPy: Arrays, Broadcasting & Vectorisation"
+        minutes: 90
+        level: beginner
+        covers: ["3: NumPy"]
+        objectives:
+          - Create, index, slice and reshape n-dimensional arrays
+          - Apply broadcasting rules and replace Python loops with vectorised operations
+          - Measure the speed-up of vectorisation and explain why it happens
+        resources: [doc-numpy-basics!, yt-fcc-numpy, book-python-data-analysis]
+      - id: da-02
+        title: Pandas DataFrames
+        minutes: 90
+        level: beginner
+        covers: ["3: Pandas"]
+        objectives:
+          - Load, select, filter and sort tabular data
+          - Group, aggregate, join and reshape DataFrames
+          - Recognise when pandas is the wrong tool (memory, scale) and alternatives (Polars, DuckDB)
+        resources: [doc-pandas-10min!, yt-galli-pandas, book-python-data-analysis!]
+      - id: da-03
+        title: Data Cleaning
+        minutes: 60
+        level: beginner
+        covers: ["3: Data Cleaning"]
+        objectives:
+          - Detect and handle missing values, duplicates, outliers and inconsistent categories
+          - Normalise text (Unicode, whitespace, casing) for downstream NLP
+          - Document every cleaning decision so it is reproducible
+        resources: [book-python-data-analysis!, course-kaggle-learn]
+      - id: da-04
+        title: Data Transformation
+        minutes: 60
+        level: intermediate
+        covers: ["3: Data Transformation"]
+        objectives:
+          - Apply feature scaling, encoding, binning and date/time transformations
+          - Split long text into overlapping windows for downstream processing
+          - Build transformation steps as pure, testable functions
+        resources: [book-python-data-analysis!, doc-sklearn]
+        workshop: forge-2
+      - id: da-05
+        title: Exploratory Data Analysis
+        minutes: 75
+        level: beginner
+        covers: ["3: Exploratory Data Analysis"]
+        objectives:
+          - Summarise distributions, correlations and segments of a dataset
+          - Visualise data to find problems before modelling
+          - Turn EDA findings into explicit hypotheses and data-quality checks
+        resources: [book-python-data-analysis!, course-kaggle-learn]
+      - id: da-06
+        title: "File Formats: CSV, JSON/JSONL, XML & Parquet"
+        minutes: 60
+        level: beginner
+        covers: ["3: JSON & JSONL", "3: CSV, XML & Parquet"]
+        objectives:
+          - Read and write CSV, JSON, JSONL, XML and Parquet correctly (encodings, quoting, schemas)
+          - Explain row vs columnar storage and why Parquet dominates analytics and datasets
+          - Stream JSONL files of LLM training/eval data line by line
+        resources: [book-python-data-analysis!, doc-hf-datasets]
+
+  - id: m04
+    title: SQL, Pipelines & Dataset Preparation
+    summary: Relational data, PostgreSQL, reliable pipelines, ethical scraping, validation and preparing datasets for ML.
+    prerequisites: [m03]
+    project: proj-mini-sql-pipeline
+    lessons:
+      - id: sq-01
+        title: Relational Thinking & SQL
+        minutes: 90
+        level: beginner
+        covers: ["3: SQL & PostgreSQL"]
+        objectives:
+          - Model data with tables, keys and normal forms
+          - Write SELECT, WHERE, JOIN, GROUP BY, HAVING, subqueries and window functions
+          - Read a query plan at a basic level
+        resources: [int-sqlbolt!, yt-fcc-sql, doc-postgres-tutorial]
+      - id: sq-02
+        title: PostgreSQL in Practice
+        minutes: 75
+        level: intermediate
+        covers: ["3: SQL & PostgreSQL"]
+        objectives:
+          - Use indexes, constraints, transactions and isolation levels correctly
+          - Store semi-structured data with JSONB and full-text search
+          - Connect from Python with SQLAlchemy and parameterised queries
+        resources: [doc-postgres-tutorial!, yt-fcc-postgres]
+      - id: sq-03
+        title: Data Pipelines
+        minutes: 75
+        level: intermediate
+        covers: ["3: Data Pipelines"]
+        objectives:
+          - Design ETL/ELT pipelines that are idempotent, incremental and observable
+          - Handle late, duplicate and malformed records
+          - Know when to reach for an orchestrator (Airflow, Prefect, Dagster)
+        resources: [book-dmls!, book-ddia]
+      - id: sq-04
+        title: Web Scraping, Responsibly
+        minutes: 60
+        level: intermediate
+        covers: ["3: Web Scraping"]
+        objectives:
+          - Fetch and parse HTML with requests/httpx and BeautifulSoup; handle JS-rendered pages
+          - Respect robots.txt, terms of service, rate limits and copyright
+          - Turn scraped HTML into clean, chunkable text with metadata
+        resources: [doc-mdn-http]
+      - id: sq-05
+        title: Data Validation
+        minutes: 45
+        level: intermediate
+        covers: ["3: Data Validation"]
+        objectives:
+          - Enforce schemas and constraints with Pydantic and dataframe validators
+          - Write data tests that fail pipelines loudly
+          - Quarantine bad records instead of silently dropping them
+        resources: [doc-pydantic!, book-dmls]
+      - id: sq-06
+        title: Dataset Preparation for ML
+        minutes: 60
+        level: intermediate
+        covers: ["3: Dataset Preparation"]
+        objectives:
+          - Create leakage-free train/validation/test splits (incl. grouped and time-based)
+          - Deduplicate, balance and label datasets; document them with a datasheet
+          - Publish a versioned dataset in a standard format
+        resources: [book-dmls!, paper-datasheets, doc-hf-datasets]
+
+  - id: m05
+    title: Mathematics for Machine Learning
+    summary: Linear algebra, calculus and probability — taught with NumPy, motivated by the models that use them.
+    prerequisites: [m03]
+    lessons:
+      - id: ma-01
+        title: Vectors & Matrices
+        minutes: 60
+        level: beginner
+        covers: ["2: Vectors & Matrices"]
+        objectives:
+          - Interpret vectors as points, directions and feature lists
+          - Interpret matrices as linear transformations and as data tables
+          - Compute norms, transposes and shapes fluently in NumPy
+        resources: [yt-3b1b-vectors!, yt-3b1b-linear-transforms!, book-mml, course-mit-1806]
+      - id: ma-02
+        title: Dot Products & Matrix Multiplication
+        minutes: 75
+        level: beginner
+        covers: ["2: Dot Products", "2: Matrix Multiplication"]
+        objectives:
+          - Compute the dot product algebraically and interpret it geometrically
+          - Derive cosine similarity from the dot product
+          - Explain matrix multiplication as many dot products and as composition of transformations
+        resources: [yt-3b1b-dot!, yt-3b1b-matmul!, book-mml, course-coursera-m4ml]
+        workshop: forge-3
+      - id: ma-03
+        title: Eigenvalues, Eigenvectors & PCA
+        minutes: 75
+        level: intermediate
+        covers: ["2: Eigenvalues & Eigenvectors"]
+        objectives:
+          - Explain eigenvectors as directions a transformation only stretches
+          - Compute eigendecompositions and SVD in NumPy
+          - Use PCA to reduce and visualise high-dimensional data (e.g. embeddings)
+        resources: [yt-3b1b-eigen!, book-mml, course-mit-1806]
+      - id: ma-04
+        title: Derivatives & Partial Derivatives
+        minutes: 60
+        level: beginner
+        covers: ["2: Derivatives", "2: Partial Derivatives"]
+        objectives:
+          - Interpret a derivative as a local rate of change and compute common derivatives
+          - Compute partial derivatives of multivariable functions
+          - Check derivatives numerically with finite differences
+        resources: [yt-3b1b-derivative!, book-mml, course-coursera-m4ml]
+      - id: ma-05
+        title: Gradients & the Chain Rule
+        minutes: 60
+        level: intermediate
+        covers: ["2: Gradients", "2: Chain Rule"]
+        objectives:
+          - Explain the gradient as the direction of steepest ascent
+          - Apply the chain rule through compositions of functions
+          - Draw a computational graph and propagate derivatives through it by hand
+        resources: [yt-3b1b-chain!, book-mml]
+      - id: ma-06
+        title: Probability Distributions & Bayes' Theorem
+        minutes: 75
+        level: beginner
+        covers: ["2: Probability Distributions", "2: Bayes' Theorem"]
+        objectives:
+          - Work with Bernoulli, categorical, Gaussian and uniform distributions
+          - Apply Bayes' theorem and explain base-rate neglect
+          - Connect softmax outputs of a model to a categorical distribution
+        resources: [yt-3b1b-bayes!, yt-statquest-likelihood, book-mml]
+      - id: ma-07
+        title: Mean, Variance & Statistical Inference
+        minutes: 75
+        level: intermediate
+        covers: ["2: Mean & Variance", "2: Statistical Inference"]
+        objectives:
+          - Compute expectation, variance and standard deviation and interpret them
+          - Build confidence intervals with the bootstrap and the central limit theorem
+          - Decide whether an eval-score difference between two models is meaningful
+        resources: [yt-3b1b-clt!, book-islp]
+
+  - id: m06
+    title: Machine Learning Fundamentals
+    summary: How machines learn from data, how to tell if they did, and how they fail.
+    prerequisites: [m05]
+    project: proj-mini-classic-ml
+    lessons:
+      - id: ml-01
+        title: Supervised & Unsupervised Learning
+        minutes: 60
+        level: beginner
+        covers: ["2: Supervised & Unsupervised Learning"]
+        objectives:
+          - Frame problems as regression, classification, clustering or dimensionality reduction
+          - Train linear/logistic regression and k-means with scikit-learn
+          - Recognise self-supervised learning as the paradigm behind LLMs
+        resources: [course-coursera-ml!, book-islp, course-google-mlcc]
+      - id: ml-02
+        title: Training, Validation & Testing
+        minutes: 45
+        level: beginner
+        covers: ["2: Training & Testing"]
+        objectives:
+          - Split data correctly and explain why the test set is touched once
+          - Use k-fold cross-validation for small datasets
+          - Spot data leakage
+        resources: [yt-statquest-cv!, book-islp]
+      - id: ml-03
+        title: Overfitting, Underfitting & Regularisation
+        minutes: 60
+        level: beginner
+        covers: ["2: Overfitting & Underfitting"]
+        objectives:
+          - Diagnose under/overfitting from learning curves
+          - Explain the bias–variance trade-off
+          - Apply L1/L2 regularisation, early stopping and more data
+        resources: [yt-statquest-bias-variance!, book-islp]
+      - id: ml-04
+        title: Loss Functions
+        minutes: 60
+        level: intermediate
+        covers: ["2: Loss Functions"]
+        objectives:
+          - Derive MSE and cross-entropy from maximum likelihood
+          - Choose a loss that matches the task and the cost of errors
+          - Explain why next-token prediction uses cross-entropy
+        resources: [yt-statquest-likelihood!, book-mml, book-deep-learning]
+      - id: ml-05
+        title: Model Evaluation & Ranking Metrics
+        minutes: 75
+        level: intermediate
+        covers: ["2: Model Evaluation"]
+        objectives:
+          - Use accuracy, precision, recall, F1, ROC-AUC and calibration appropriately
+          - Evaluate rankings with precision@k, recall@k, MRR and nDCG
+          - Score documents against a query with TF-IDF and BM25
+        resources: [doc-sklearn!, book-islp, book-slp3]
+        workshop: forge-4

@@ -1,0 +1,371 @@
+# Stage 2 — Deep Learning Foundations
+id: s2
+order: 2
+title: Deep Learning Foundations
+summary: >-
+  Neural networks from first principles, PyTorch, sequence models, attention and the transformer,
+  and how large language models are built, trained and aligned.
+modules:
+  - id: m07
+    title: Neural Networks from First Principles
+    summary: Build a neural network and backpropagation from scratch before touching a framework.
+    prerequisites: [m05, m06]
+    project: proj-mini-numpy-nn
+    lessons:
+      - id: nn-01
+        title: Perceptrons & Artificial Neurons
+        minutes: 45
+        level: beginner
+        covers: ["4: Perceptrons", "2: Neural Networks"]
+        objectives:
+          - Compute a neuron's output as a weighted sum plus bias through a nonlinearity
+          - Train a perceptron and explain why it cannot learn XOR
+          - Relate neurons to logistic regression
+        resources: [yt-3b1b-nn!, book-nielsen!, int-tf-playground]
+      - id: nn-02
+        title: Activation Functions
+        minutes: 45
+        level: beginner
+        covers: ["2: Activation Functions"]
+        objectives:
+          - Compare sigmoid, tanh, ReLU, GELU, SiLU/Swish and softmax
+          - Explain saturation and vanishing gradients
+          - Pick activations for hidden layers vs output layers
+        resources: [book-d2l!, book-udl]
+      - id: nn-03
+        title: Feedforward Neural Networks
+        minutes: 60
+        level: beginner
+        covers: ["4: Feedforward Neural Networks"]
+        objectives:
+          - Express a multilayer perceptron as stacked matrix multiplications
+          - Explain the universal approximation intuition and why depth helps
+          - Initialise weights sensibly (Xavier/He) and explain why
+        resources: [book-nielsen!, book-d2l, int-tf-playground]
+      - id: nn-04
+        title: Gradient Descent
+        minutes: 60
+        level: beginner
+        covers: ["2: Gradient Descent"]
+        objectives:
+          - Implement batch, stochastic and mini-batch gradient descent
+          - Tune the learning rate and diagnose divergence and slow convergence
+          - Visualise a loss landscape
+        resources: [yt-3b1b-gd!, yt-statquest-gd!, book-udl]
+      - id: nn-05
+        title: Forward Pass & Backpropagation
+        minutes: 120
+        level: intermediate
+        covers: ["2: Backpropagation", "4: Forward & Backpropagation"]
+        objectives:
+          - Run a forward pass and backpropagate gradients through a computational graph
+          - Implement a scalar autograd engine (micrograd-style)
+          - Verify gradients numerically
+        resources: [yt-karpathy-micrograd!, yt-3b1b-backprop!, book-nielsen]
+      - id: nn-06
+        title: Loss Functions for Deep Learning
+        minutes: 45
+        level: intermediate
+        covers: ["4: Loss Functions"]
+        objectives:
+          - Implement numerically stable softmax + cross-entropy (log-sum-exp)
+          - Use contrastive and margin losses (used to train embedding models)
+          - Explain label smoothing and class weighting
+        resources: [book-d2l!, book-deep-learning]
+      - id: nn-07
+        title: "Optimizers: SGD, Momentum, Adam & Schedules"
+        minutes: 60
+        level: intermediate
+        covers: ["4: Optimizers"]
+        objectives:
+          - Implement SGD with momentum, RMSProp and Adam/AdamW
+          - Use learning-rate warmup and cosine decay
+          - Explain why AdamW is the default for transformers
+        resources: [paper-adam!, book-d2l, book-udl]
+
+  - id: m08
+    title: PyTorch & Deep Learning Frameworks
+    summary: Rebuild what you made by hand with PyTorch, then learn GPUs, checkpointing and the Keras alternative.
+    prerequisites: [m07]
+    project: proj-module-pytorch-classifier
+    lessons:
+      - id: pt-01
+        title: Tensors
+        minutes: 60
+        level: beginner
+        covers: ["5: Tensors"]
+        objectives:
+          - Create and manipulate tensors; understand dtype, device, shape and strides
+          - Use broadcasting, views and in-place ops safely
+          - Move between NumPy and PyTorch
+        resources: [doc-pytorch-basics!, book-d2l]
+      - id: pt-02
+        title: Autograd
+        minutes: 60
+        level: intermediate
+        covers: ["5: Autograd"]
+        objectives:
+          - Explain the dynamic computation graph and requires_grad
+          - Inspect .grad, detach tensors and use torch.no_grad
+          - Debug common autograd errors
+        resources: [doc-pytorch-basics!, yt-karpathy-micrograd]
+      - id: pt-03
+        title: nn.Module
+        minutes: 60
+        level: intermediate
+        covers: ["5: nn.Module"]
+        objectives:
+          - Build models by subclassing nn.Module and composing layers
+          - Manage parameters, buffers, train/eval modes
+          - Inspect a model's parameter count and memory footprint
+        resources: [doc-pytorch-basics!]
+      - id: pt-04
+        title: Datasets & DataLoaders
+        minutes: 45
+        level: intermediate
+        covers: ["5: DataLoaders"]
+        objectives:
+          - Implement map-style and iterable datasets
+          - Batch, shuffle, collate variable-length sequences and use worker processes
+          - Find data-loading bottlenecks
+        resources: [doc-pytorch-basics!]
+      - id: pt-05
+        title: Custom Training Loops
+        minutes: 75
+        level: intermediate
+        covers: ["5: Custom Training Loops"]
+        objectives:
+          - Write a full training/validation loop with metrics and early stopping
+          - Use gradient clipping, accumulation and mixed precision
+          - Make training reproducible with seeds and deterministic settings
+        resources: [doc-pytorch-basics!, yt-karpathy-makemore-mlp, course-fastai]
+      - id: pt-06
+        title: GPU Training & CUDA Fundamentals
+        minutes: 75
+        level: intermediate
+        covers: ["5: GPU Training", "5: CUDA Fundamentals"]
+        objectives:
+          - Explain the CUDA thread/block/grid model and GPU memory hierarchy
+          - Train on GPU, profile utilisation and avoid host–device sync points
+          - Estimate GPU memory for weights, gradients, optimizer state and activations
+        resources: [doc-cuda-guide!, int-colab!, yt-karpathy-gpt2]
+      - id: pt-07
+        title: Model Checkpointing
+        minutes: 30
+        level: beginner
+        covers: ["5: Model Checkpointing"]
+        objectives:
+          - Save and load state_dicts for model, optimizer and scheduler
+          - Resume training exactly; use safetensors
+          - Keep best/last checkpoints and track them with metadata
+        resources: [doc-pytorch-basics!]
+      - id: pt-08
+        title: TensorFlow & Keras Basics
+        minutes: 45
+        level: beginner
+        covers: ["5: TensorFlow & Keras Basics"]
+        objectives:
+          - Build and train a model with the Keras Sequential and Functional APIs
+          - Compare Keras 3, TensorFlow and PyTorch idioms
+          - Read Keras code you meet in the wild
+        resources: [doc-keras!, book-handson-ml]
+
+  - id: m09
+    title: Sequence Models, Attention & Transformers
+    summary: From convolutions and recurrence to attention — and why the transformer won.
+    prerequisites: [m08]
+    project: proj-mini-attention
+    lessons:
+      - id: sm-01
+        title: Convolutional Neural Networks
+        minutes: 60
+        level: intermediate
+        covers: ["4: CNNs & RNNs"]
+        objectives:
+          - Explain convolution, padding, stride, pooling and receptive fields
+          - Train a small CNN on images in PyTorch
+          - Understand residual connections (ResNet)
+        resources: [yt-statquest-cnn!, course-cs231n, paper-resnet]
+      - id: sm-02
+        title: RNNs, LSTMs & GRUs
+        minutes: 75
+        level: intermediate
+        covers: ["4: CNNs & RNNs", "4: LSTMs & GRUs"]
+        objectives:
+          - Unroll an RNN and explain vanishing/exploding gradients
+          - Explain LSTM and GRU gating
+          - Identify the sequential bottleneck that motivated attention
+        resources: [yt-statquest-rnn!, yt-statquest-lstm!, paper-seq2seq]
+      - id: sm-03
+        title: Learned Embeddings
+        minutes: 60
+        level: intermediate
+        covers: ["4: Embeddings"]
+        objectives:
+          - Explain an embedding layer as a learnable lookup table
+          - Train word2vec-style embeddings and inspect neighbours
+          - Distinguish token embeddings from sentence/document embeddings
+        resources: [yt-statquest-word2vec!, art-illustrated-word2vec!, paper-word2vec]
+      - id: sm-04
+        title: Attention Mechanisms
+        minutes: 60
+        level: intermediate
+        covers: ["4: Attention Mechanisms"]
+        objectives:
+          - Explain additive (Bahdanau) attention for seq2seq
+          - Compute attention weights as a softmax over similarity scores
+          - Visualise alignment between source and target
+        resources: [paper-bahdanau!, book-d2l]
+      - id: sm-05
+        title: Self-Attention & Multi-Head Attention
+        minutes: 90
+        level: intermediate
+        covers: ["6: Self-Attention & Multi-Head Attention"]
+        objectives:
+          - Derive scaled dot-product attention from queries, keys and values
+          - Implement causal self-attention and multi-head attention in NumPy/PyTorch
+          - Explain the O(n²) cost of attention and its consequences
+        resources: [yt-3b1b-attention!, yt-karpathy-gpt!, art-illustrated-transformer, int-transformer-explainer]
+      - id: sm-06
+        title: The Transformer Architecture
+        minutes: 90
+        level: advanced
+        covers: ["4: Transformer Architecture", "6: Transformer Architecture", "6: Positional Encoding"]
+        objectives:
+          - Assemble a transformer block (attention, MLP, residuals, LayerNorm)
+          - Compare sinusoidal, learned and rotary (RoPE) positional encodings
+          - Read the "Attention Is All You Need" paper end to end
+        resources: [paper-attention!, yt-3b1b-transformers!, yt-statquest-transformer, paper-rope, yt-yannic-attention]
+      - id: sm-07
+        title: Transfer Learning
+        minutes: 45
+        level: intermediate
+        covers: ["4: Transfer Learning"]
+        objectives:
+          - Explain why pretrained representations transfer
+          - Fine-tune a pretrained CNN/transformer vs freezing and training a head
+          - Avoid catastrophic forgetting
+        resources: [course-fastai!, yt-fastai-lesson1]
+
+  - id: m10
+    title: LLM Fundamentals
+    summary: What LLMs are, how they read text, how they are pretrained and aligned, and the open vs closed landscape.
+    prerequisites: [m09]
+    project: proj-mini-tiny-gpt
+    lessons:
+      - id: llm-01
+        title: What Are Large Language Models?
+        minutes: 60
+        level: beginner
+        covers: ["6: What Are Large Language Models?", "6: Model Parameters"]
+        objectives:
+          - Describe an LLM as a next-token probability model
+          - Explain parameters, layers, hidden size and how parameter count relates to memory
+          - Summarise scaling laws at a high level
+        resources: [yt-karpathy-intro-llm!, yt-karpathy-deep-dive, paper-scaling-laws, paper-chinchilla]
+      - id: llm-02
+        title: Tokenization, Vocabulary & Token IDs
+        minutes: 75
+        level: intermediate
+        covers: ["6: Tokenization", "6: Vocabulary & Token IDs"]
+        objectives:
+          - Implement byte-pair encoding from scratch
+          - Explain vocabulary size trade-offs and special tokens
+          - Predict tokenization quirks (numbers, code, non-English text) and their costs
+        resources: [yt-karpathy-tokenizer!, int-tokenizer-playground!]
+      - id: llm-03
+        title: "Encoder, Decoder & Encoder–Decoder Models: BERT and GPT"
+        minutes: 75
+        level: intermediate
+        covers: ["6: Encoder & Decoder Models", "6: GPT Architecture", "6: BERT Architecture"]
+        objectives:
+          - Compare encoder-only, decoder-only and encoder–decoder transformers
+          - Explain masked LM (BERT) vs causal LM (GPT) objectives
+          - Choose the right family for embeddings, classification and generation
+        resources: [paper-bert!, paper-gpt3!, yt-karpathy-gpt]
+      - id: llm-04
+        title: Context Windows
+        minutes: 45
+        level: intermediate
+        covers: ["6: Context Windows"]
+        objectives:
+          - Explain what limits context length (attention cost, KV cache, positional encodings)
+          - Describe long-context techniques and the "lost in the middle" effect
+          - Budget a context window for a real application
+        resources: [paper-lost-middle!, paper-rope]
+      - id: llm-05
+        title: Pretraining, Post-Training & Instruction Tuning
+        minutes: 60
+        level: intermediate
+        covers: ["6: Pretraining & Post-Training", "6: Instruction Tuning"]
+        objectives:
+          - Describe pretraining data, objectives and compute
+          - Explain SFT/instruction tuning and chat templates
+          - Distinguish base models from instruct/chat models
+        resources: [yt-state-of-gpt!, yt-karpathy-deep-dive, paper-llama2]
+      - id: llm-06
+        title: RLHF & DPO
+        minutes: 60
+        level: advanced
+        covers: ["6: RLHF & DPO"]
+        objectives:
+          - Explain reward modelling and PPO-based RLHF
+          - Derive the intuition behind DPO's loss
+          - Discuss reward hacking and constitutional/AI-feedback methods
+        resources: [paper-instructgpt!, paper-dpo!, paper-constitutional]
+      - id: llm-07
+        title: Open-Source vs Proprietary Models
+        minutes: 45
+        level: beginner
+        covers: ["6: Open-Source vs Proprietary Models"]
+        objectives:
+          - Compare open-weight and API models on capability, cost, privacy and control
+          - Read a model card and licence
+          - Build a model-selection matrix for a use case
+        resources: [paper-model-cards!, book-ai-engineering]
+
+  - id: m11
+    title: The Hugging Face Ecosystem
+    summary: Transformers, Tokenizers, Datasets and Accelerate — the open-model toolkit.
+    prerequisites: [m10]
+    lessons:
+      - id: hf-01
+        title: The Transformers Library
+        minutes: 60
+        level: intermediate
+        covers: ["5: Transformers"]
+        objectives:
+          - Use pipelines, AutoTokenizer and AutoModel classes
+          - Run generation with sampling parameters (temperature, top-p)
+          - Load models in reduced precision and on the right device
+        resources: [course-hf-llm!, doc-hf-transformers!]
+      - id: hf-02
+        title: Tokenizers
+        minutes: 45
+        level: intermediate
+        covers: ["5: Tokenizers"]
+        objectives:
+          - Train a BPE tokenizer on a custom corpus
+          - Inspect offsets, special tokens and chat templates
+          - Measure tokens-per-word across languages
+        resources: [doc-hf-tokenizers!, course-hf-llm]
+      - id: hf-03
+        title: Datasets
+        minutes: 45
+        level: intermediate
+        covers: ["5: Datasets"]
+        objectives:
+          - Load, stream, map and filter datasets efficiently
+          - Push a dataset with a dataset card to the Hub
+          - Work with Arrow/Parquet-backed data at scale
+        resources: [doc-hf-datasets!, course-hf-llm]
+      - id: hf-04
+        title: Accelerate
+        minutes: 45
+        level: advanced
+        covers: ["5: Accelerate"]
+        objectives:
+          - Make a training loop device-agnostic with Accelerate
+          - Use mixed precision and gradient accumulation through config
+          - Understand DDP vs FSDP at a conceptual level
+        resources: [doc-hf-accelerate!]

@@ -1,0 +1,150 @@
+# Tutor Forge — the learner builds the AI tutor without being told up front.
+# Each part appears inside a lesson as an ordinary "Workshop" task. The platform verifies it by running
+# forge/tests/<test> against forge/workspace/<file>. The Tutor page stays a locked silhouette until the
+# reveal part passes; then the tutor runs on the learner's own code.
+reveal_after: forge-7
+parts:
+  - id: forge-1
+    order: 1
+    lesson: py-04
+    title: Text normaliser & tokenizer
+    file: text.py
+    test: test_part1_text.py
+    functions: [normalize, tokenize]
+    task: |
+      Implement two small utilities in `forge/workspace/text.py`:
+
+      * `normalize(text: str) -> str` — Unicode-normalise (NFKC), lowercase, replace any run of
+        whitespace with a single space and strip the ends.
+      * `tokenize(text: str) -> list[str]` — normalise, then return the alphanumeric word tokens
+        (keep apostrophes inside words, drop punctuation), removing tokens found in `STOPWORDS`.
+
+      Use a comprehension or a generator — this is the lesson's topic.
+    hints:
+      - "`unicodedata.normalize('NFKC', text)` handles full-width characters and ligatures."
+      - "`re.findall(r\"[a-z0-9]+(?:'[a-z0-9]+)*\", text)` extracts words with internal apostrophes."
+      - Normalise before you tokenize so 'Hello' and 'hello' produce the same token.
+    capability: The tutor can find lessons that contain the words in your question.
+  - id: forge-2
+    order: 2
+    lesson: da-04
+    title: Overlapping text chunker
+    file: chunking.py
+    test: test_part2_chunking.py
+    functions: [chunk_text]
+    task: |
+      Implement `chunk_text(text, size=120, overlap=30) -> list[str]` in `forge/workspace/chunking.py`.
+
+      Split `text` into whitespace-separated words and return windows of at most `size` words, where each
+      window starts `size - overlap` words after the previous one. The last window must include the final
+      word; do not emit a trailing window that is fully contained in the previous one.
+      Raise `ValueError` if `size <= 0`, `overlap < 0` or `overlap >= size`.
+    hints:
+      - The step between window starts is `size - overlap`.
+      - Stop once a window reaches the end of the word list.
+      - "Edge cases: empty text → [], text shorter than `size` → one chunk."
+    capability: The tutor can quote the exact passage that answers you, instead of a whole lesson.
+  - id: forge-3
+    order: 3
+    lesson: ma-02
+    title: Vector similarity
+    file: vectors.py
+    test: test_part3_vectors.py
+    functions: [dot, norm, cosine_similarity, top_k]
+    task: |
+      Implement, in `forge/workspace/vectors.py`, without NumPy (plain Python lists):
+
+      * `dot(a, b)` — raise `ValueError` if lengths differ.
+      * `norm(a)` — the Euclidean (L2) norm.
+      * `cosine_similarity(a, b)` — return 0.0 if either vector has zero norm.
+      * `top_k(query, vectors, k)` — return the indices of the `k` vectors most cosine-similar to `query`,
+        best first; ties broken by lower index.
+    hints:
+      - "cos(θ) = (a · b) / (‖a‖ ‖b‖)"
+      - "`sorted(range(len(vectors)), key=lambda i: (-score[i], i))` gives best-first with stable ties."
+    capability: The tutor can rank passages by vector similarity.
+  - id: forge-4
+    order: 4
+    lesson: ml-05
+    title: BM25 ranking
+    file: ranking.py
+    test: test_part4_ranking.py
+    functions: [bm25_scores]
+    task: |
+      Implement `bm25_scores(query_tokens, docs_tokens, k1=1.5, b=0.75) -> list[float]` in
+      `forge/workspace/ranking.py`, returning one Okapi BM25 score per document.
+
+      IDF(q) = ln( (N - n(q) + 0.5) / (n(q) + 0.5) + 1 ), where N is the number of documents and n(q) the
+      number of documents containing q. Score(D) = Σ IDF(q) · f(q,D)·(k1+1) / (f(q,D) + k1·(1 - b + b·|D|/avgdl)).
+      Repeated query tokens count once. Return all zeros for an empty corpus or query.
+    hints:
+      - Pre-compute document frequencies with a Counter over `set(doc)` for each doc.
+      - avgdl is the mean document length in tokens.
+    capability: The tutor ranks passages by keyword relevance — robust to rare technical terms.
+  - id: forge-5
+    order: 5
+    lesson: api-08
+    title: Provider-agnostic LLM client
+    file: generate.py
+    test: test_part5_generate.py
+    functions: [build_request, parse_response, generate]
+    task: |
+      Implement a minimal client in `forge/workspace/generate.py`:
+
+      * `build_request(provider, model, system, user, max_tokens=800) -> dict` returning
+        `{"url": ..., "headers": {...}, "json": {...}}` for `"openai"` (Chat Completions),
+        `"anthropic"` (Messages API) and `"ollama"` (`/api/chat`, `stream: false`).
+        Read API keys from the environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`); never hard-code them.
+        Raise `ValueError` for unknown providers.
+      * `parse_response(provider, data: dict) -> str` extracting the generated text.
+      * `generate(system, user)` — reads `TUTOR_PROVIDER` / `TUTOR_MODEL` from the environment, returns
+        `None` when the provider is unset or `"none"`, otherwise sends the request with `httpx` (timeout 60 s)
+        and returns the parsed text.
+    hints:
+      - "OpenAI: POST https://api.openai.com/v1/chat/completions, header Authorization: Bearer <key>, messages with a system message."
+      - "Anthropic: POST https://api.anthropic.com/v1/messages, headers x-api-key and anthropic-version: 2023-06-01, top-level `system`, required `max_tokens`."
+      - "Ollama: POST http://localhost:11434/api/chat (respect OLLAMA_HOST if set)."
+      - "OpenAI text: data['choices'][0]['message']['content']; Anthropic: join the `text` of content blocks; Ollama: data['message']['content']."
+    capability: The tutor can answer in natural language using a model you choose — hosted or local.
+  - id: forge-6
+    order: 6
+    lesson: pe-03
+    title: Grounded prompt builder
+    file: prompting.py
+    test: test_part6_prompting.py
+    functions: [build_grounded_prompt]
+    task: |
+      Implement `build_grounded_prompt(question, passages) -> tuple[str, str]` in `forge/workspace/prompting.py`.
+      `passages` is a list of dicts with `title` and `text`. Return `(system, user)` where:
+
+      * `system` instructs the model to answer **only** from the numbered sources, cite them like `[1]`,
+        and say it does not know when the sources are insufficient.
+      * `user` contains each passage wrapped as `<source id="N" title="...">text</source>` (N from 1),
+        followed by the question inside `<question>...</question>`.
+      * Escape `<` and `>` inside passage text and the question so content cannot close your tags.
+    hints:
+      - "`html.escape(text, quote=False)` escapes < > &."
+      - Keep instructions in the system prompt and data in the user turn.
+    capability: The tutor's answers are grounded in course material with numbered citations.
+  - id: forge-7
+    order: 7
+    lesson: rag-04
+    title: Retrieval-augmented answering
+    file: rag.py
+    test: test_part7_rag.py
+    functions: [reciprocal_rank_fusion, retrieve, answer]
+    task: |
+      Assemble everything in `forge/workspace/rag.py`:
+
+      * `reciprocal_rank_fusion(rankings, k=60) -> list[int]` — fuse several best-first lists of indices.
+      * `retrieve(question, chunks, embed, k=4) -> list[int]` — `chunks` is a list of dicts with `text`;
+        `embed(text) -> list[float]` is provided. Rank chunks by BM25 (your `ranking.bm25_scores` over your
+        `text.tokenize`) and by cosine similarity (your `vectors`), fuse with RRF and return the top-k indices.
+      * `answer(question, chunks, embed, k=4) -> dict` — retrieve, build the grounded prompt with your
+        `prompting` module and call your `generate`. Return `{"answer": str, "sources": [indices]}`.
+        If `generate` returns `None`, return an extractive answer: the best chunk's text.
+    hints:
+      - "RRF score of an item = Σ 1 / (k + rank), rank starting at 1."
+      - Import your earlier parts — that's the point.
+      - "Call the LLM as `generate.generate(...)` (import the module, not the function) so it can be swapped out in tests."
+    capability: The full tutor — retrieval, grounding and generation, built entirely by you.

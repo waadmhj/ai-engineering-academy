@@ -1,0 +1,283 @@
+# Stage 4 — Advanced AI Systems
+id: s4
+order: 4
+title: Advanced AI Systems
+summary: >-
+  Agents and agentic systems, the frameworks that orchestrate them (and when not to use one),
+  adapting models through fine-tuning, and engineering across images, audio and video.
+modules:
+  - id: m17
+    title: AI Agents & Agentic Systems
+    summary: Build agents from raw API calls first — loops, tools, memory, state — then make them reliable and safe.
+    prerequisites: [m12, m16]
+    project: proj-module-research-agent
+    lessons:
+      - id: ag-01
+        title: What Are AI Agents? Workflows vs Agents
+        minutes: 60
+        level: intermediate
+        covers: ["11: What Are AI Agents?", "11: Agent Architecture"]
+        objectives:
+          - Define an agent as an LLM using tools in a loop with an environment
+          - Compare workflows (prompt chaining, routing, parallelisation) with autonomous agents
+          - Draw a reference agent architecture
+        resources: [art-anthropic-agents!, art-weng-agents!, course-hf-agents]
+      - id: ag-02
+        title: Tool Calling & Function Execution
+        minutes: 60
+        level: intermediate
+        covers: ["11: Tool Calling", "11: Function Execution"]
+        objectives:
+          - Design tool interfaces that models use correctly (names, descriptions, schemas)
+          - Execute tools safely with validation, timeouts and error messages the model can use
+          - Build an agent loop from scratch without a framework
+        resources: [doc-anthropic!, paper-toolformer]
+      - id: ag-03
+        title: Reasoning, Planning & Execution Loops
+        minutes: 60
+        level: advanced
+        covers: ["11: Reasoning & Planning", "11: Planning & Execution Loops"]
+        objectives:
+          - Implement ReAct and plan-and-execute loops
+          - Add stopping conditions, step budgets and re-planning
+          - Compare reasoning models with explicit planning
+        resources: [paper-react!, art-weng-agents]
+      - id: ag-04
+        title: Memory & Agent State Management
+        minutes: 60
+        level: advanced
+        covers: ["11: Short-Term & Long-Term Memory", "11: Agent State Management"]
+        objectives:
+          - Separate working context, episodic and semantic memory
+          - Persist and resume agent state with checkpoints
+          - Retrieve memories by recency, importance and relevance
+        resources: [paper-generative-agents!, doc-langgraph]
+      - id: ag-05
+        title: Workflow Orchestration, Single- & Multi-Agent Systems
+        minutes: 60
+        level: advanced
+        covers: ["11: Workflow Orchestration", "11: Single-Agent Systems", "11: Multi-Agent Systems"]
+        objectives:
+          - Orchestrate steps as a graph/state machine
+          - Compare single agents with orchestrator–worker and handoff patterns
+          - Justify multi-agent designs by measurement, not novelty
+        resources: [art-anthropic-agents!, doc-langgraph]
+      - id: ag-06
+        title: Human-in-the-Loop, Reflection & Self-Correction
+        minutes: 45
+        level: advanced
+        covers: ["11: Human-in-the-Loop", "11: Reflection & Self-Correction"]
+        objectives:
+          - Insert approval gates before irreversible actions
+          - Implement evaluator–optimizer and Reflexion-style loops
+          - Measure when reflection helps vs wastes tokens
+        resources: [paper-reflexion!, art-anthropic-agents]
+      - id: ag-07
+        title: Agent Reliability, Evaluation & Security
+        minutes: 75
+        level: advanced
+        covers: ["11: Agent Reliability", "11: Agent Evaluation", "11: Agent Security"]
+        objectives:
+          - Make agents robust to tool failures, loops and model errors
+          - Evaluate trajectories and outcomes
+          - Apply least privilege and sandboxing to agent actions
+        resources: [doc-owasp-llm!, book-ai-engineering, paper-indirect-injection]
+
+  - id: m18
+    title: AI Frameworks & Orchestration
+    summary: What the popular frameworks actually do under the hood, and how to choose — or skip — them.
+    prerequisites: [m15, m17]
+    lessons:
+      - id: fw-01
+        title: Why Frameworks? LangChain Under the Hood
+        minutes: 60
+        level: intermediate
+        covers: ["12: LangChain"]
+        objectives:
+          - Rebuild your hand-written RAG with LangChain components
+          - Read the framework's source to see what each abstraction does
+          - Identify the costs of abstraction (debuggability, versions, lock-in)
+        resources: [doc-langchain!]
+      - id: fw-02
+        title: LangGraph & Workflow Orchestration
+        minutes: 75
+        level: intermediate
+        covers: ["12: LangGraph", "12: Workflow Orchestration"]
+        objectives:
+          - Model an agent as a state graph with nodes, edges and conditional routing
+          - Use checkpointing for persistence and human-in-the-loop
+          - Compare with general orchestrators (Temporal, Prefect)
+        resources: [doc-langgraph!, course-dlai-langgraph!]
+      - id: fw-03
+        title: "Data Frameworks: LlamaIndex & Haystack"
+        minutes: 60
+        level: intermediate
+        covers: ["12: LlamaIndex", "12: Haystack"]
+        objectives:
+          - Build ingestion and query pipelines in LlamaIndex and Haystack
+          - Compare their abstractions with LangChain's
+          - Choose one for a document-heavy product
+        resources: [doc-llamaindex!, doc-haystack!]
+      - id: fw-04
+        title: "Typed & Programmatic: Pydantic AI, DSPy & Semantic Kernel"
+        minutes: 60
+        level: advanced
+        covers: ["12: Pydantic AI", "12: DSPy", "12: Semantic Kernel"]
+        objectives:
+          - Build a type-safe agent with Pydantic AI
+          - Optimise a pipeline against a metric with DSPy
+          - Recognise Semantic Kernel's role in the Microsoft ecosystem
+        resources: [doc-pydantic-ai!, doc-dspy!, paper-dspy, doc-semantic-kernel]
+      - id: fw-05
+        title: "Multi-Agent Frameworks: CrewAI & AutoGen"
+        minutes: 45
+        level: intermediate
+        covers: ["12: CrewAI", "12: AutoGen"]
+        objectives:
+          - Build a role-based crew and a conversational multi-agent team
+          - Inspect the prompts and messages these frameworks generate
+          - Evaluate their cost and reliability against a single agent
+        resources: [doc-crewai!, doc-autogen!]
+      - id: fw-06
+        title: Framework Selection & Trade-offs
+        minutes: 45
+        level: advanced
+        covers: ["12: Framework Selection & Tradeoffs"]
+        objectives:
+          - Score frameworks on control, observability, maturity, ecosystem and team fit
+          - Write an architecture decision record (ADR) for a framework choice
+          - Recognise when plain code is the best framework
+        resources: [art-anthropic-agents!, book-ai-engineering]
+
+  - id: m19
+    title: Model Fine-Tuning & Adaptation
+    summary: When to fine-tune, how to prepare data, PEFT/LoRA/QLoRA, preference tuning and proving it worked.
+    prerequisites: [m11, m16]
+    project: proj-module-finetune
+    lessons:
+      - id: ft-01
+        title: Pretrained Models & When to Fine-Tune vs RAG
+        minutes: 60
+        level: intermediate
+        covers: ["13: Pretrained Models", "13: When to Fine-Tune vs RAG"]
+        objectives:
+          - Choose a base model for adaptation
+          - Decide between prompting, RAG, fine-tuning or a combination
+          - Estimate cost and maintenance burden of each
+        resources: [book-ai-engineering!, course-coursera-genai-llm]
+      - id: ft-02
+        title: Dataset Preparation & Synthetic Data Generation
+        minutes: 75
+        level: intermediate
+        covers: ["13: Dataset Preparation", "13: Synthetic Data Generation"]
+        objectives:
+          - Format instruction and chat datasets with templates
+          - Generate, filter and deduplicate synthetic data
+          - Avoid contamination of eval sets
+        resources: [paper-self-instruct!, doc-hf-datasets, course-dlai-finetuning]
+      - id: ft-03
+        title: Supervised Fine-Tuning & Instruction Tuning
+        minutes: 75
+        level: advanced
+        covers: ["13: Supervised Fine-Tuning (SFT)", "13: Instruction Tuning"]
+        objectives:
+          - Run SFT with TRL's SFTTrainer
+          - Mask prompt tokens from the loss and pack sequences
+          - Choose hyperparameters and monitor overfitting
+        resources: [doc-hf-trl!, course-dlai-finetuning!]
+      - id: ft-04
+        title: "Parameter-Efficient Fine-Tuning: PEFT, LoRA & QLoRA"
+        minutes: 90
+        level: advanced
+        covers: ["13: Parameter-Efficient Fine-Tuning", "13: LoRA", "13: QLoRA", "13: PEFT"]
+        objectives:
+          - Derive LoRA's low-rank update and its parameter savings
+          - Fine-tune a 4-bit quantized model with QLoRA on one GPU
+          - Merge, serve and swap adapters
+        resources: [paper-lora!, paper-qlora!, yt-umar-lora!, doc-hf-peft]
+      - id: ft-05
+        title: Preference Tuning with DPO
+        minutes: 60
+        level: advanced
+        covers: ["13: DPO"]
+        objectives:
+          - Build a preference dataset of chosen/rejected pairs
+          - Train with DPOTrainer and tune beta
+          - Compare DPO with RLHF and newer variants
+        resources: [paper-dpo!, doc-hf-trl!]
+      - id: ft-06
+        title: Fine-Tuning Evaluation
+        minutes: 45
+        level: advanced
+        covers: ["13: Fine-Tuning Evaluation"]
+        objectives:
+          - Evaluate task performance against the base model and a prompted baseline
+          - Check for regressions on general capabilities and safety
+          - Report results with confidence intervals
+        resources: [book-ai-engineering!, art-hamel-evals]
+
+  - id: m20
+    title: Multimodal AI Engineering
+    summary: Vision, documents, speech, video and generation — and retrieval across modalities.
+    prerequisites: [m15]
+    lessons:
+      - id: mm-01
+        title: Vision-Language Models & Image Understanding
+        minutes: 60
+        level: intermediate
+        covers: ["14: Vision-Language Models", "14: Image Understanding"]
+        objectives:
+          - Explain ViT patches, CLIP alignment and LLaVA-style connectors
+          - Use a VLM for captioning, VQA and extraction
+          - Evaluate VLM outputs on your task
+        resources: [paper-vit!, paper-llava!, paper-clip]
+      - id: mm-02
+        title: OCR & Document Intelligence
+        minutes: 60
+        level: intermediate
+        covers: ["14: OCR & Document Intelligence"]
+        objectives:
+          - Compare classic OCR pipelines with layout models and VLMs
+          - Extract tables and key–value pairs from forms
+          - Measure extraction accuracy field by field
+        resources: [paper-layoutlm!, doc-gemini]
+      - id: mm-03
+        title: "Speech: Speech-to-Text, Text-to-Speech & Audio Understanding"
+        minutes: 60
+        level: intermediate
+        covers: ["14: Speech-to-Text", "14: Text-to-Speech", "14: Audio Understanding"]
+        objectives:
+          - Transcribe audio with Whisper and measure word error rate
+          - Generate speech and manage latency for voice agents
+          - Analyse audio beyond transcripts (speakers, events)
+        resources: [paper-whisper!, doc-openai]
+      - id: mm-04
+        title: Video Understanding
+        minutes: 45
+        level: advanced
+        covers: ["14: Video Understanding"]
+        objectives:
+          - Sample frames and combine with transcripts for video QA
+          - Manage token costs for long videos
+          - Index video by scene for search
+        resources: [doc-gemini!]
+      - id: mm-05
+        title: Multimodal Embeddings & Multimodal RAG
+        minutes: 60
+        level: advanced
+        covers: ["14: Multimodal Embeddings", "14: Multimodal RAG"]
+        objectives:
+          - Search images with text using CLIP embeddings
+          - Build RAG over documents containing images and tables
+          - Choose between captioning-then-embedding and native multimodal embeddings
+        resources: [paper-clip!, doc-qdrant]
+      - id: mm-06
+        title: Image Generation & Diffusion Models
+        minutes: 60
+        level: advanced
+        covers: ["14: Image Generation Models", "14: Diffusion Models"]
+        objectives:
+          - Explain forward noising and learned reverse denoising
+          - Explain latent diffusion and text conditioning
+          - Discuss safety, provenance and licensing of generated images
+        resources: [paper-ddpm!, paper-ldm!, book-udl]

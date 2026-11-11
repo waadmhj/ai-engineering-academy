@@ -1,0 +1,101 @@
+# Stage 6 — Real-World Engineering & Career
+id: s6
+order: 6
+title: Real-World Engineering & Career
+summary: >-
+  Engineer serious capstone systems end to end, assemble a portfolio that proves it,
+  and prepare for — and land — AI engineering roles.
+modules:
+  - id: m27
+    title: Capstone Studio
+    summary: >-
+      Thirteen realistic capstones (see Projects). This module teaches the engineering process you apply to each:
+      requirements, design reviews, ADRs, milestones, evaluation and documentation.
+    prerequisites: [m16, m21]
+    lessons:
+      - id: cap-01
+        title: How to Engineer a Capstone
+        minutes: 60
+        level: intermediate
+        covers: []
+        objectives:
+          - Turn a problem statement into functional and non-functional requirements
+          - Run a design review and record decisions as ADRs
+          - Plan milestones with evaluation gates and a definition of done
+        resources: [book-ai-engineering!, book-dmls]
+
+  - id: m28
+    title: Career Preparation
+    summary: Portfolio, resume, interviews, open source, writing and the job search.
+    prerequisites: [m15]
+    lessons:
+      - id: car-01
+        title: A Strong GitHub Portfolio & an AI Engineering Resume
+        minutes: 60
+        level: beginner
+        covers: ["23: Build a Strong GitHub Portfolio", "23: Create an AI Engineering Resume"]
+        objectives:
+          - Curate 3–5 projects with READMEs, architecture diagrams, evals and demos
+          - Write impact-focused resume bullets with metrics
+          - Tailor the resume to AI engineer vs ML engineer roles
+        resources: [book-pro-git]
+      - id: car-02
+        title: Python & SQL Interviews
+        minutes: 90
+        level: intermediate
+        covers: ["23: Master Python & SQL Interviews"]
+        objectives:
+          - Solve common coding patterns under time pressure while thinking aloud
+          - Write window-function and join-heavy SQL
+          - Use the Interview mode question bank deliberately
+        resources: [book-pythonds!, int-sqlbolt]
+      - id: car-03
+        title: ML & LLM Fundamentals Review
+        minutes: 60
+        level: intermediate
+        covers: ["23: Learn ML & LLM Fundamentals"]
+        objectives:
+          - Explain core ML/DL/LLM concepts concisely at whiteboard level
+          - Derive key formulas (softmax, cross-entropy, attention) from memory
+          - Identify and close your weak areas from the Progress page
+        resources: [yt-karpathy-intro-llm!, book-ai-engineering]
+      - id: car-04
+        title: AI System Design Interviews — RAG & Agent Architectures
+        minutes: 90
+        level: advanced
+        covers: ["23: Practice AI System Design", "23: Understand RAG & Agent Architectures"]
+        objectives:
+          - Run a 45-minute AI system-design interview with a clear structure
+          - Present RAG and agent architectures with trade-offs and evaluation
+          - Handle follow-ups on scale, cost and failure modes
+        resources: [book-ai-engineering!, book-ddia]
+      - id: car-05
+        title: Inference Optimisation & Production Case Studies
+        minutes: 60
+        level: advanced
+        covers: ["23: Learn Inference Optimization", "23: Study Production AI Case Studies"]
+        objectives:
+          - Explain inference optimisations you could apply and their gains
+          - Analyse published production case studies for architecture and lessons
+          - Present a case study as a 5-minute interview story
+        resources: [art-eugeneyan-patterns!, paper-vllm]
+      - id: car-06
+        title: Open Source, Technical Writing & Building in Public
+        minutes: 45
+        level: beginner
+        covers: ["23: Contribute to Open Source", "23: Write Technical Articles", "23: Build in Public"]
+        objectives:
+          - Find and land a first contribution to an AI open-source project
+          - Write a clear technical article about one of your projects
+          - Share progress consistently without over-claiming
+        resources: [book-pro-git]
+      - id: car-07
+        title: Applying for AI Engineer Roles
+        minutes: 45
+        level: beginner
+        covers: ["23: Apply for AI Engineer Roles"]
+        objectives:
+          - Target companies and roles that fit your portfolio
+          - Prepare for each interview stage (screen, coding, ML, system design, behavioural)
+          - Evaluate and negotiate offers
+        resources: []

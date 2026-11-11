@@ -1,0 +1,239 @@
+overview:
+  what: The dot product — algebraically, geometrically and computationally — and matrix multiplication as many dot products at once.
+  why: The dot product is the single most important operation in modern AI. Every neuron computes one, attention is built from them, and similarity search ranks documents by them.
+  where: Neural network layers (`x @ W`), attention scores (`Q @ K.T`), cosine similarity in semantic search and RAG, recommendation scores, and GPU performance (matmul throughput is what GPUs are built for).
+  prerequisites: "Vectors & Matrices (ma-01): shapes, norms, transposes. NumPy basics (da-01)."
+
+sections:
+  - kind: simple
+    title: Simple explanation
+    body: |
+      The dot product takes two lists of numbers of the same length, multiplies them position by position, and adds up the results:
+
+      `[1, 2, 3] · [4, 5, 6] = 1·4 + 2·5 + 3·6 = 32`
+
+      Geometrically, it tells you **how much two arrows point in the same direction**, scaled by how long they are.
+      Big and positive → pointing the same way. Zero → perpendicular ("unrelated"). Negative → pointing opposite ways.
+
+      Matrix multiplication is just a **grid of dot products**: every row of the first matrix dotted with every column of the second.
+
+  - kind: technical
+    title: Technical explanation
+    body: |
+      For $\mathbf{a}, \mathbf{b} \in \mathbb{R}^n$:
+
+      $$\mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i = \|\mathbf{a}\|\,\|\mathbf{b}\|\cos\theta$$
+
+      where $\|\mathbf{a}\| = \sqrt{\mathbf{a}\cdot\mathbf{a}}$ is the Euclidean norm and $\theta$ the angle between the vectors.
+      The two formulas agree — the algebraic one is how we **compute**, the geometric one is how we **interpret**.
+
+      Rearranging gives **cosine similarity**, which removes the effect of length:
+
+      $$\cos\theta = \frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|\,\|\mathbf{b}\|} \in [-1, 1]$$
+
+      **Projection.** $\frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{b}\|}$ is the length of $\mathbf{a}$'s shadow on the direction of $\mathbf{b}$ —
+      "how much of $\mathbf{a}$ lies along $\mathbf{b}$".
+
+      **Matrix multiplication.** For $A \in \mathbb{R}^{m\times k}$ and $B \in \mathbb{R}^{k\times n}$, $C = AB \in \mathbb{R}^{m\times n}$ with
+
+      $$C_{ij} = \sum_{t=1}^{k} A_{it} B_{tj} = (\text{row } i \text{ of } A) \cdot (\text{column } j \text{ of } B)$$
+
+      The inner dimensions must match ($k$). Three useful views:
+      1. **Dot-product view:** each entry is one dot product (used by attention: $QK^\top$ = all query–key similarities).
+      2. **Linear-map view:** $AB$ applies $B$ then $A$ — composition of transformations (3Blue1Brown, Chapter 4).
+      3. **Weighted-sum view:** each column of $AB$ is a weighted combination of $A$'s columns (how a layer mixes features).
+
+      Matmul is associative ($(AB)C = A(BC)$) but **not commutative** ($AB \ne BA$ in general). Cost: $m\cdot k\cdot n$ multiply–adds,
+      i.e. $2mkn$ FLOPs — the number you use to estimate GPU time.
+
+  - kind: diagram
+    title: Geometry of the dot product
+    svg: |
+      <svg viewBox="0 0 520 230" role="img" aria-label="Vector a projected onto vector b; angle theta between them" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui" font-size="14">
+        <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent, #6366f1)"/></marker></defs>
+        <line x1="60" y1="190" x2="460" y2="190" stroke="currentColor" stroke-width="2" marker-end="url(#m2)"/>
+        <text x="465" y="195" fill="currentColor">b</text>
+        <line x1="60" y1="190" x2="300" y2="50" stroke="var(--accent, #6366f1)" stroke-width="2.5" marker-end="url(#m3)"/>
+        <text x="305" y="45" fill="var(--accent, #6366f1)">a</text>
+        <line x1="300" y1="50" x2="300" y2="190" stroke="currentColor" stroke-dasharray="5 4" opacity=".6"/>
+        <line x1="60" y1="205" x2="300" y2="205" stroke="var(--accent, #6366f1)" stroke-width="4" opacity=".5"/>
+        <text x="110" y="225" fill="currentColor" opacity=".8">projection of a on b = ‖a‖ cos θ</text>
+        <path d="M 110 190 A 50 50 0 0 0 103 165" fill="none" stroke="currentColor"/>
+        <text x="118" y="175" fill="currentColor">θ</text>
+      </svg>
+    caption: "a · b = ‖b‖ × (length of a's shadow on b). Perpendicular vectors cast no shadow: dot product 0."
+
+  - kind: math
+    title: Worked example
+    body: |
+      Let $\mathbf{a} = (3, 4)$ and $\mathbf{b} = (4, 3)$.
+
+      - $\mathbf{a}\cdot\mathbf{b} = 3\cdot4 + 4\cdot3 = 24$
+      - $\|\mathbf{a}\| = \|\mathbf{b}\| = 5$
+      - $\cos\theta = 24 / 25 = 0.96 \Rightarrow \theta \approx 16.3^\circ$ — nearly the same direction.
+
+      Now $\mathbf{c} = (30, 40)$: $\mathbf{c}\cdot\mathbf{b} = 240$ — ten times larger — but $\cos\theta$ is still $0.96$.
+      **The dot product mixes direction and magnitude; cosine keeps only direction.** This distinction drives the choice of
+      similarity metric in vector search (lesson emb-02).
+
+      Matrix example: $\begin{bmatrix}1&2\\3&4\end{bmatrix}\begin{bmatrix}5\\6\end{bmatrix} = \begin{bmatrix}1\cdot5+2\cdot6\\3\cdot5+4\cdot6\end{bmatrix} = \begin{bmatrix}17\\39\end{bmatrix}$ — two dot products.
+
+  - kind: code
+    title: Code
+    body: |
+      ```python
+      import numpy as np
+
+      a = np.array([3.0, 4.0])
+      b = np.array([4.0, 3.0])
+
+      # Three equivalent ways to compute a dot product
+      print(sum(x * y for x, y in zip(a, b)))   # plain Python: 24.0
+      print(np.dot(a, b), a @ b)                # NumPy: 24.0 24.0
+
+      def cosine(u, v):
+          return (u @ v) / (np.linalg.norm(u) * np.linalg.norm(v))
+      print(cosine(a, b))                        # 0.96
+
+      # Matrix multiplication = many dot products
+      X = np.random.randn(32, 768)   # 32 token vectors of width 768
+      W = np.random.randn(768, 3072) # a feed-forward layer's weights
+      H = X @ W                      # (32, 3072): each entry = row of X · column of W
+      print(H.shape)
+
+      # Attention scores: every query dotted with every key
+      Q = np.random.randn(10, 64)
+      K = np.random.randn(10, 64)
+      scores = Q @ K.T / np.sqrt(64)   # (10, 10)
+
+      # Cosine similarity of one query against a matrix of documents (vectorised)
+      docs = np.random.randn(10_000, 384)
+      q = np.random.randn(384)
+      docs_n = docs / np.linalg.norm(docs, axis=1, keepdims=True)
+      q_n = q / np.linalg.norm(q)
+      sims = docs_n @ q_n                     # (10000,) cosine similarities
+      top5 = np.argsort(-sims)[:5]
+
+      # Why vectorise? Compare with a Python loop (~100x slower)
+      # sims_slow = [cosine(d, q) for d in docs]
+      ```
+
+  - kind: real_world
+    title: Real-world engineering example
+    body: |
+      A semantic-search service stores 2 million 768-dimensional document embeddings. Ranking a query by brute force is
+      one matrix–vector product: $2{,}000{,}000 \times 768 \approx 1.5$ billion multiply–adds — about 3 GFLOPs.
+      A modern CPU does this in tens of milliseconds; a GPU in about a millisecond. That back-of-envelope estimate tells
+      you whether you need an approximate-nearest-neighbour index at all (lesson emb-05) — often you don't below a few million vectors.
+
+      Engineers also **pre-normalise** embeddings at write time. Once every vector has unit length, cosine similarity *is*
+      the dot product, so the database can use the cheaper inner-product search.
+
+  - kind: mistakes
+    title: Common mistakes
+    body: |
+      - **Shape mismatches.** `(n,)` vs `(n, 1)` vs `(1, n)` behave differently with `@` and broadcasting. Print shapes.
+      - **Using `*` for matrix multiplication.** In NumPy/PyTorch `*` is element-wise; use `@`.
+      - **Comparing raw dot products across vectors of different lengths** when you mean "same direction". Normalise first.
+      - **Python loops over vectors.** Vectorise with NumPy; loops are 10–100× slower.
+      - **Assuming `AB == BA`.** Order matters.
+      - **Dividing by a zero norm** in cosine similarity — guard against empty or all-zero vectors.
+
+  - kind: when
+    title: When to use it — and when not
+    body: |
+      - Use the **raw dot product** when magnitude carries meaning (e.g. some embedding models are trained for inner-product
+        search; recommendation scores where popularity is encoded in length).
+      - Use **cosine similarity** when only direction matters, e.g. comparing texts of different lengths.
+      - Use **Euclidean distance** when absolute positions matter (clustering in a geometric space). For unit vectors,
+        $\|a-b\|^2 = 2 - 2\cos\theta$, so all three rank identically.
+      - Don't hand-roll matmul in production — call BLAS-backed libraries (NumPy, PyTorch).
+
+exercise:
+  title: Vectorised cosine search
+  prompt: |
+    Implement `search(query, docs, k)` that returns the indices of the `k` rows of `docs` (a 2-D NumPy array)
+    most cosine-similar to `query`, best first — **without Python loops**. Treat zero-norm rows as similarity 0.
+  starter: |
+    import numpy as np
+
+    def search(query: np.ndarray, docs: np.ndarray, k: int) -> np.ndarray:
+        ...
+  expected: |
+    docs = np.array([[1, 0], [0, 1], [1, 1], [0, 0]], dtype=float)
+    search(np.array([1.0, 0.1]), docs, 2)   # -> array([0, 2])
+  hints:
+    - Compute all row norms at once with `np.linalg.norm(docs, axis=1)`.
+    - "Avoid division by zero with `np.where(norms == 0, 1, norms)` and then zero those scores."
+    - "`np.argsort(-scores)[:k]` returns best-first indices."
+  solution: |
+    import numpy as np
+
+    def search(query, docs, k):
+        q_norm = np.linalg.norm(query)
+        d_norms = np.linalg.norm(docs, axis=1)
+        safe = np.where(d_norms == 0, 1.0, d_norms)
+        scores = (docs @ query) / (safe * (q_norm or 1.0))
+        scores[d_norms == 0] = 0.0
+        return np.argsort(-scores, kind="stable")[:k]
+  explanation: |
+    `docs @ query` computes every dot product in one BLAS call. Dividing by the product of norms turns them into cosines.
+    Zero-norm rows are given a safe denominator and then forced to 0 so they never rank first by accident. A stable sort
+    keeps ties in index order, which makes results deterministic — important for tests and caching.
+  advanced: |
+    Use `np.argpartition` to make top-k O(n) instead of O(n log n), then sort only the k winners. Benchmark both on
+    1,000,000 × 384 random vectors and explain the difference.
+
+quiz:
+  - id: q1
+    kind: mcq
+    prompt: "What is $(1, 2, 3)\\cdot(4, -5, 6)$?"
+    options: ["12", "32", "-12", "0"]
+    answer: 0
+    explanation: "1·4 + 2·(−5) + 3·6 = 4 − 10 + 18 = 12."
+  - id: q2
+    kind: mcq
+    prompt: Two non-zero vectors have a dot product of 0. What does this tell you?
+    options: ["One of them is zero", "They are perpendicular (orthogonal)", "They point in opposite directions", "They have equal length"]
+    answer: 1
+    explanation: "a·b = ‖a‖‖b‖cos θ; with non-zero norms, cos θ = 0 ⇒ θ = 90°."
+  - id: q3
+    kind: mcq
+    prompt: "A has shape (64, 128) and B has shape (128, 32). What is the shape of A @ B and how many multiply–adds does it take?"
+    options: ["(64, 32); 64·128·32", "(128, 128); 64·32", "(64, 32); 64·32", "Invalid shapes"]
+    answer: 0
+    explanation: Inner dimensions (128) match; output is (64, 32); each of the 64·32 entries is a 128-term dot product.
+  - id: q4
+    kind: multi
+    prompt: For unit-length vectors, which of these produce the SAME ranking of documents for a query?
+    options: ["Dot product (descending)", "Cosine similarity (descending)", "Euclidean distance (ascending)", "Manhattan distance (ascending)"]
+    answer: [0, 1, 2]
+    explanation: "For unit vectors cos = dot and ‖a−b‖² = 2 − 2cos θ, a monotonic transformation. Manhattan distance is not."
+  - id: q5
+    kind: technical
+    prompt: Explain why cosine similarity is often preferred over the raw dot product for comparing text embeddings.
+    keywords: [["length", "magnitude", "norm"], ["direction", "angle"]]
+    model_answer: The dot product grows with vector magnitude, which can reflect length or frequency artefacts rather than meaning. Cosine divides by both norms, keeping only direction (the angle), so semantically similar texts score highly regardless of magnitude. If embeddings are already unit-normalised, the two are identical.
+  - id: q6
+    kind: scenario
+    prompt: You must rank 5 million 1024-d embeddings for each query, with a 50 ms budget on a single CPU. Estimate the cost of brute force and propose an approach.
+    keywords: [["5", "billion", "flop", "multiply"], ["ann", "hnsw", "index", "approximate", "gpu", "quantiz"]]
+    model_answer: "Brute force is 5M × 1024 ≈ 5.1 billion multiply–adds (~10 GFLOPs) per query — roughly 100 ms–1 s on a CPU, too slow for 50 ms. Options: an ANN index such as HNSW or IVF-PQ (sub-millisecond to a few ms with high recall), GPU brute force, reduced dimensionality (Matryoshka truncation) or quantized vectors. Validate recall@k against brute force."
+  - id: q7
+    kind: short
+    prompt: In attention, what does the matrix product $QK^\top$ compute?
+    keywords: [["every", "all", "each"], ["query"], ["key"], ["dot product", "similarit", "score"]]
+    model_answer: "A matrix of dot products between every query vector and every key vector — the raw attention scores (before scaling and softmax)."
+
+flashcards:
+  - front: Algebraic and geometric formulas for the dot product
+    back: "a·b = Σ aᵢbᵢ = ‖a‖‖b‖cos θ"
+  - front: Cosine similarity formula
+    back: "cos θ = (a·b) / (‖a‖‖b‖), range [−1, 1]"
+  - front: "Entry C_ij of C = AB"
+    back: Row i of A dotted with column j of B.
+  - front: FLOPs for an (m×k)·(k×n) matrix multiply
+    back: "≈ 2·m·k·n (m·k·n multiply–adds)"
+  - front: Why pre-normalise embeddings?
+    back: For unit vectors cosine similarity equals the dot product, enabling cheaper inner-product search.
