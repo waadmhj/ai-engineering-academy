@@ -153,7 +153,7 @@ body {
 }
 
 .fade-in {
-  animation: fade-in 0.25s ease-out both;
+  animation: fade-in 0.25s ease-out backwards; /* not "both": a retained transform would break position: fixed inside */
 }
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -211,3 +211,45 @@ body {
 .diagram svg { width: 100%; height: auto; color: var(--text); max-width: 720px; margin: 0 auto; display: block; }
 
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+/* ───────────── Annotations (highlights, sticky notes, ink) ─────────────
+   -hl: text highlight + marker fill · -note/-edge: sticky note paper + border · -ink: pen stroke */
+:root {
+  --ann-yellow-hl: rgb(250 204 21 / 0.38);  --ann-yellow-note: #fef6d2; --ann-yellow-edge: #ecd27a;
+  --ann-green-hl: rgb(74 222 128 / 0.34);   --ann-green-note: #e2f7e9;  --ann-green-edge: #9fd8b3;
+  --ann-blue-hl: rgb(96 165 250 / 0.32);    --ann-blue-note: #e3eefc;   --ann-blue-edge: #a6c4ee;
+  --ann-pink-hl: rgb(244 114 182 / 0.30);   --ann-pink-note: #fce8f2;   --ann-pink-edge: #eeaecd;
+  --ann-purple-hl: rgb(167 139 250 / 0.34); --ann-purple-note: #eee9fd; --ann-purple-edge: #bfb0f0;
+  --ann-ink-ink: #1c1c1a; --ann-blue-ink: #2457c5; --ann-red-ink: #c8322f; --ann-green-ink: #1d7f4c; --ann-purple-ink: #6d3fd0;
+  --ann-blend: multiply;
+  --ann-yellow-dot: #eab308; --ann-green-dot: #22c55e; --ann-blue-dot: #3b82f6; --ann-pink-dot: #ec4899; --ann-purple-dot: #8b5cf6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ann-yellow-hl: rgb(250 204 21 / 0.30);  --ann-yellow-note: #332c12; --ann-yellow-edge: #6b5a1c;
+    --ann-green-hl: rgb(74 222 128 / 0.26);   --ann-green-note: #142a1c;  --ann-green-edge: #2c6142;
+    --ann-blue-hl: rgb(96 165 250 / 0.30);    --ann-blue-note: #152536;   --ann-blue-edge: #2e5584;
+    --ann-pink-hl: rgb(244 114 182 / 0.28);   --ann-pink-note: #331828;   --ann-pink-edge: #7a3a5c;
+    --ann-purple-hl: rgb(167 139 250 / 0.30); --ann-purple-note: #251c3b; --ann-purple-edge: #54428c;
+    --ann-ink-ink: #ececef; --ann-blue-ink: #6ea8f7; --ann-red-ink: #f47a76; --ann-green-ink: #5fd398; --ann-purple-ink: #b39af6;
+    --ann-blend: normal;
+  }
+}
+:root[data-theme="dark"] {
+  --ann-yellow-hl: rgb(250 204 21 / 0.30);  --ann-yellow-note: #332c12; --ann-yellow-edge: #6b5a1c;
+  --ann-green-hl: rgb(74 222 128 / 0.26);   --ann-green-note: #142a1c;  --ann-green-edge: #2c6142;
+  --ann-blue-hl: rgb(96 165 250 / 0.30);    --ann-blue-note: #152536;   --ann-blue-edge: #2e5584;
+  --ann-pink-hl: rgb(244 114 182 / 0.28);   --ann-pink-note: #331828;   --ann-pink-edge: #7a3a5c;
+  --ann-purple-hl: rgb(167 139 250 / 0.30); --ann-purple-note: #251c3b; --ann-purple-edge: #54428c;
+  --ann-ink-ink: #ececef; --ann-blue-ink: #6ea8f7; --ann-red-ink: #f47a76; --ann-green-ink: #5fd398; --ann-purple-ink: #b39af6;
+  --ann-blend: normal;
+}
+::highlight(ann-yellow) { background-color: var(--ann-yellow-hl); }
+::highlight(ann-green) { background-color: var(--ann-green-hl); }
+::highlight(ann-blue) { background-color: var(--ann-blue-hl); }
+::highlight(ann-pink) { background-color: var(--ann-pink-hl); }
+::highlight(ann-purple) { background-color: var(--ann-purple-hl); }
+::highlight(ann-focus) { text-decoration: underline 2px var(--accent); text-underline-offset: 3px; }
+.ann-marker { mix-blend-mode: var(--ann-blend); }
+@keyframes ann-flash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 30% { box-shadow: 0 0 0 4px var(--accent); } }
+.ann-flash { animation: ann-flash 1.4s ease-out 1; }

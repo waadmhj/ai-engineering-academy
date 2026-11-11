@@ -3,7 +3,8 @@
 import { ArrowRight, BookOpenCheck, Clock, Flame, Layers, RotateCcw, Sparkles, Target, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useApi } from "@/lib/api";
-import type { Dashboard, LessonBrief } from "@/lib/types";
+import { PinnedNotes } from "@/components/annotations/notebook-item";
+import type { Dashboard, LessonBrief, NotebookEntry } from "@/lib/types";
 import {
   Badge, ButtonLink, Card, CardHeader, EmptyState, ErrorState, PageHeader, PageSkeleton, ProgressBar, Ring, Stat, StatusBadge, pct,
 } from "@/components/ui";
@@ -29,6 +30,7 @@ const ACTIVITY_LABEL: Record<string, string> = {
 
 export default function DashboardPage() {
   const { data, error, loading, reload } = useApi<Dashboard>("/dashboard");
+  const { data: pinned } = useApi<NotebookEntry[]>("/notebook?pinned=true");
   if (loading && !data) return <PageSkeleton />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return null;
@@ -152,6 +154,13 @@ export default function DashboardPage() {
               </div>
             </div>
           </Card>
+
+          {pinned && pinned.length > 0 && (
+            <Card>
+              <CardHeader title="Pinned notes" action={<Link href="/notebook" className="text-xs text-accent-text hover:underline">Notebook</Link>} />
+              <PinnedNotes entries={pinned} />
+            </Card>
+          )}
 
           <Card>
             <CardHeader title="Flashcards due" action={<Layers className="size-4 text-fg-3" />} />

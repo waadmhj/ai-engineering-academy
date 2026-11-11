@@ -238,3 +238,16 @@ export interface FlashcardItem {
   lapses: number;
   interval_days: number;
 }
+
+// ───────────── Annotations ─────────────
+export type AnnKind = "highlight" | "note" | "ink";
+export type AnnColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange" | "red" | "ink";
+export interface HighlightData { scope: string; quote: string; prefix: string; suffix: string; start: number }
+export interface NoteData { scope: string; x: number; dy: number; collapsed?: boolean }
+export interface InkData { scope: string; tool: "pen" | "marker"; size: number; points: [number, number, number][] }
+interface AnnBase { id: number; lesson_id: string; color: AnnColor; text: string; pinned: boolean; created_at: string; updated_at: string }
+export type Annotation =
+  | (AnnBase & { kind: "highlight"; data: HighlightData })
+  | (AnnBase & { kind: "note"; data: NoteData })
+  | (AnnBase & { kind: "ink"; data: InkData });
+export type NotebookEntry = Annotation & { lesson_title: string; module_title: string };

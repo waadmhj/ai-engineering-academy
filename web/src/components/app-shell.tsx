@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  BarChart3, BookOpen, Bot, ClipboardCheck, FolderKanban, GraduationCap, Layers, LayoutDashboard, Library, Map,
+  BarChart3, BookOpen, Bot, ClipboardCheck, FolderKanban, GraduationCap, Layers, LayoutDashboard, Library, Map, NotebookPen,
   Menu, Moon, Search, Settings, Sun, X,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tutor", label: "AI Tutor", icon: Bot },
   { href: "/flashcards", label: "Flashcards", icon: Layers },
+  { href: "/notebook", label: "Notebook", icon: NotebookPen },
   { href: "/assessments", label: "Assessments", icon: ClipboardCheck },
   { href: "/progress", label: "Progress & Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },

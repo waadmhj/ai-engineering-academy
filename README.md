@@ -75,6 +75,22 @@ FORGE_DIR=forge/solutions python -m pytest forge/tests   # reference solutions p
 * **Needs revision** is set automatically when revision answers or flashcard retention drop below 60%.
 * Open answers use active recall: you write an answer, compare it with the model answer, then self-grade. A "correct" self-grade is capped at partial credit if your answer covers fewer than half the key ideas.
 
+## Notes, highlights and drawing
+
+Every lesson page has an annotation toolbar at the bottom (Notability-style):
+
+| Tool | Key | What it does |
+|---|---|---|
+| Select | `V` | Read normally. Select text to get a colour picker and **Add note** |
+| Highlighter | `H` | Select text and it's highlighted straight away |
+| Pen / Marker | `P` / `M` | Draw on the page (pressure-sensitive with a stylus; touch is ignored once a stylus is used) |
+| Eraser | `E` | Drag over pen and marker strokes |
+| Sticky note | `N` | Click anywhere to place a note; drag it by its handle, collapse it, recolour it |
+
+Click a highlight to recolour it, attach a note, pin it or remove it. `Ctrl+Z` undoes the last mark, and deletions offer **Undo**.
+Pinned items appear first in the **Notebook** page (every highlight and note across lessons, searchable) and on the dashboard.
+Highlights are anchored to the text, so they survive window resizing; drawings and notes are anchored to the nearest section.
+
 ## The AI tutor (Tutor Forge)
 
 There is no AI tutor at the start. Seven lessons contain a **Workshop** task: write a small function in

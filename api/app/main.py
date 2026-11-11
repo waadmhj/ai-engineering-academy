@@ -16,7 +16,7 @@ from . import models
 from .config import get_settings
 from .content.loader import ContentError, load_content, seed
 from .db import Base, SessionLocal, engine
-from .routers import account, curriculum, forge, learning, practice, projects
+from .routers import account, annotations, curriculum, forge, learning, practice, projects
 
 log = logging.getLogger("academy")
 
@@ -53,5 +53,5 @@ def health():
     return {"status": "ok"}
 
 
-for r in (curriculum.router, learning.router, practice.router, projects.router, forge.router, account.router):
+for r in (curriculum.router, learning.router, practice.router, projects.router, forge.router, account.router, annotations.router):
     app.include_router(r, prefix="/api")

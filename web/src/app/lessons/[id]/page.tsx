@@ -3,6 +3,9 @@
 import { Bot, ChevronLeft, ChevronRight, Clock, Compass, Layers, PanelLeftClose, PanelLeftOpen, Target } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { AnnotationLayer } from "@/components/annotations/layer";
+import { LessonNotesPanel } from "@/components/annotations/notes-panel";
+import { useAnnotations } from "@/components/annotations/use-annotations";
 import { ExercisePanel, LessonQuiz, ObjectivesChecklist, useStudyTimer, WorkshopPanel } from "@/components/lesson-parts";
 import { Markdown } from "@/components/markdown";
 import { ResourceCard } from "@/components/resources";
@@ -18,7 +21,7 @@ const SECTION_LABEL: Record<Section["kind"], string> = {
 
 function SectionBlock({ s, i }: { s: Section; i: number }) {
   return (
-    <section id={`s-${i}`} aria-labelledby={`s-${i}-h`} className="scroll-mt-20">
+    <section id={`s-${i}`} data-anchor={`s-${i}`} data-annotatable aria-labelledby={`s-${i}-h`} className="scroll-mt-20">
       <p className="text-xs font-medium uppercase tracking-wide text-accent-text">{SECTION_LABEL[s.kind]}</p>
       <h2 id={`s-${i}-h`} className="mt-1 text-xl font-semibold tracking-tight">{s.title}</h2>
       {s.svg && (
@@ -74,6 +77,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
   const { data: tutor } = useApi<{ revealed: boolean }>("/tutor/status");
   const [navOpen, setNavOpen] = useState(true);
   const [tutorOpen, setTutorOpen] = useState(false);
+  const [orphans, setOrphans] = useState<number[]>([]);
+  const ann = useAnnotations(id);
   useStudyTimer(id);
 
   useEffect(() => {
@@ -130,8 +135,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
         {/* Main content */}
         <article className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          <div className="mx-auto max-w-3xl space-y-10">
-            <header id="overview" className="scroll-mt-20">
+          <AnnotationLayer ann={ann} onOrphans={setOrphans} className="mx-auto max-w-3xl" contentClassName="space-y-10">
+            <header id="overview" data-anchor="overview" data-annotatable className="scroll-mt-20">
               <nav aria-label="Breadcrumb" className="text-xs text-fg-3">
                 <Link href={`/paths/${lesson.stage.id}`} className="hover:text-fg">Stage {lesson.stage.order}</Link> /{" "}
                 <Link href={`/modules/${lesson.module.id}`} className="hover:text-fg">{lesson.module.title}</Link>
@@ -182,7 +187,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
             </header>
 
             {video && (
-              <section aria-label="Lesson video">
+              <section aria-label="Lesson video" data-anchor="video">
                 <ResourceCard r={video} showVideo />
               </section>
             )}
@@ -191,11 +196,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               <SectionBlock key={i} s={s} i={i} />
             ))}
 
-            {lesson.workshop && <WorkshopPanel lesson={lesson} />}
-            {lesson.exercise && <ExercisePanel lesson={lesson} onProgress={onProgress} />}
-            {authored ? <LessonQuiz lesson={lesson} onProgress={onProgress} /> : <ObjectivesChecklist lesson={lesson} onProgress={onProgress} />}
+            {lesson.workshop && <div data-anchor="workshop"><WorkshopPanel lesson={lesson} /></div>}
+            {lesson.exercise && <div data-anchor="exercise"><ExercisePanel lesson={lesson} onProgress={onProgress} /></div>}
+            <div data-anchor="check">
+              {authored ? <LessonQuiz lesson={lesson} onProgress={onProgress} /> : <ObjectivesChecklist lesson={lesson} onProgress={onProgress} />}
+            </div>
 
-            <section id="resources" aria-labelledby="resources-h" className="scroll-mt-20">
+            <section id="resources" data-anchor="resources" aria-labelledby="resources-h" className="scroll-mt-20">
               <h2 id="resources-h" className="text-lg font-semibold">Learning resources</h2>
               <p className="mt-1 text-sm text-fg-2">A short, curated list. Study the required ones; the supplementary ones go deeper.</p>
               {required.length > 0 && <h3 className="mt-5 text-sm font-semibold">Required</h3>}
@@ -205,7 +212,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               {lesson.resources.length === 0 && <p className="mt-3 text-sm text-fg-3">No external resources for this lesson. The lesson itself is the material.</p>}
             </section>
 
-            <nav className="flex items-center justify-between gap-3 border-t border-border pt-6" aria-label="Lesson navigation">
+            <nav data-anchor="end" className="flex items-center justify-between gap-3 border-t border-border pt-6" aria-label="Lesson navigation">
               {lesson.prev ? (
                 <Link href={`/lessons/${lesson.prev.id}`} className="group flex min-w-0 items-center gap-2 text-sm text-fg-2 hover:text-fg">
                   <ChevronLeft className="size-4 shrink-0" />
@@ -219,7 +226,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 </Link>
               )}
             </nav>
-          </div>
+          </AnnotationLayer>
         </article>
 
         {/* Right: outline, progress, resources, tutor */}
@@ -248,6 +255,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
               ))}
             </ul>
           </nav>
+
+          <LessonNotesPanel ann={ann} orphans={orphans} />
 
           {lesson.resources.length > 0 && (
             <div>

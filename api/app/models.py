@@ -306,3 +306,25 @@ class ForgeProgress(Base):
     total_tests: Mapped[int] = mapped_column(Integer, default=0)
     last_output: Mapped[str] = mapped_column(Text, default="")
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Annotation(Base):
+    """A learner's mark on a lesson page: a text highlight, a sticky note or a pen/marker stroke.
+
+    `data` holds the kind-specific anchor (validated in routers/annotations.py):
+      highlight: {scope, quote, prefix, suffix, start}        anchored to the text, survives reflow
+      note:      {scope, x, dy, collapsed}                      x = fraction of page width, dy = px below the scope's top
+      ink:       {scope, tool, size, points: [[x, dy, p], ...]} same coordinate system as notes
+    """
+
+    __tablename__ = "annotations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    lesson_id: Mapped[str] = mapped_column(String(32), index=True)
+    kind: Mapped[str] = mapped_column(String(16))  # highlight | note | ink
+    color: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text, default="")
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

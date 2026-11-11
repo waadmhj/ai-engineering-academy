@@ -17,6 +17,7 @@
 | Revision mode (weakest first, auto-flags lessons for revision) and interview mode (35 questions, 7 tracks) | ✅ | API tests |
 | Projects: 8 mini, 9 module, 12 capstones and 1 portfolio project, each capstone with the 16 required sections, milestones with evidence, ADRs and a weighted rubric | ✅ | API tests (submission rules) |
 | Tutor Forge: 7 workshops, verification via pytest, locked tutor, reveal, grounded tutor with citations, optional LLM | ✅ | End-to-end test with the reference solutions |
+| Annotations: text highlights (5 colours), sticky notes (drag, pin, collapse), pen/marker ink with eraser, undo, Notebook page, pinned notes on the dashboard | ✅ | API tests (`test_annotations.py`) and a scripted headless-browser run (light, dark, 390px mobile) |
 | JWT auth mode (register/login, bcrypt) | ✅ implemented | Not covered by automated tests yet |
 | Dark mode, responsive layout, keyboard search (Ctrl K) | ✅ | Screenshots (desktop). Mobile layout implemented but not screenshot-tested |
 
@@ -34,3 +35,5 @@
 
 * Some documentation sites block iframe embedding. "Read in platform" shows a notice and an "Open original" link.
 * Exercise completion for full lessons is self-reported (with the code saved). Workshops are verified automatically.
+* Pen and marker drawings are positioned relative to the nearest lesson section. If text reflows (window much narrower or wider), a drawing stays near its section but may no longer line up exactly with the words it marked. Highlights don't have this problem.
+* Text highlights use the CSS Custom Highlight API (Chrome/Edge 105+, Safari 17.2+, Firefox 140+). In older browsers the highlighter is disabled with a message; notes and drawing still work.
